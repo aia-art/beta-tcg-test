@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NightCafe: The Card Game - Beta Portal</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Supabase JS Library CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: radial-gradient(circle at center, #0d0b18 0%, #05040a 100%);
+      color: #e2e8f0;
+    }
+    .fancy-title {
+      font-family: 'Cinzel', serif;
+    }
+    .code-font {
+      font-family: 'Fira Code', monospace;
+    }
+    /* 3D Tilt Card Effects */
+    .card-3d-wrap {
+      perspective: 800px;
+    }
+    .card-3d {
+      transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+      transform-style: preserve-3d;
+    }
+    /* Glow highlights for specific card regions */
+    .ability-glow {
+      fill: rgba(212, 175, 55, 0);
+      stroke: rgba(212, 175, 55, 0);
+      stroke-width: 2.5;
+      transition: all 0.25s ease;
+    }
+    .ability-glow.active-hover {
+      fill: rgba(212, 175, 55, 0.12);
+      stroke: rgba(251, 191, 36, 1);
+      filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #08070e;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #25223c;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #443e74;
+    }
+  </style>
+</head>
+<body class="min-h-screen overflow-x-hidden selection:bg-purple-900 selection:text-white">
+
+  <div id="app" class="relative min-h-screen flex flex-col" v-cloak>
+    
+    <!-- HEADER -->
+    <header class="border-b border-purple-950/60 bg-black/40 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" @click="currentScreen = 'welcome'">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-purple-600 to-amber-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+          <span class="fancy-title font-extrabold text-white text-lg">NC</span>
+        </div>
+        <div>
+          <h1 class="fancy-title text-base font-extrabold tracking-wider bg-gradient-to-r from-amber-200 to-purple-400 bg-clip-text text-transparent">NIGHTCAFE</h1>
+          <p class="text-[10px] text-purple-400 font-semibold tracking-widest uppercase">The Card Game • Beta</p>
+        </div>
+      </div>
+
+      <!-- Navigation & Status -->
+      <div class="flex items-center space-x-6">
+        <nav class="hidden md:flex items-center space-x-1" v-if="authenticatedUser">
+          <button @click="currentScreen = 'welcome'" :class="buttonClass('welcome')">Home</button>
+          <button @click="currentScreen = 'play'" :class="buttonClass('play')">Play Duel</button>
+          <button @click="currentScreen = 'index'" :class="buttonClass('index')">Card Index & Decks</button>
+          <button @click="currentScreen = 'info'" :class="buttonClass('info')">Rules & Guides</button>
+          <button @click="currentScreen = 'vote'" :class="buttonClass('vote')">A/B Voting</button>
+        </nav>
+
+        <div class="flex items-center space-x-3">
+          <!-- Connection Status -->
+          <span class="flex h-2.5 w-2.5 relative">
+            <span :class="['animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', supabaseConnected ? 'bg-emerald-400' : 'bg-amber-400']"></span>
+            <span :class="['relative inline-flex rounded-full h-2.5 w-2.5', supabaseConnected ? 'bg-emerald-500' : 'bg-amber-500']"></span>
+          </span>
+          <span class="text-xs text-slate-400 hidden sm:inline">{{ supabaseConnected ? 'Supabase Live' : 'Sandbox Mode' }}</span>
+
+          <div v-if="authenticatedUser" class="flex items-center space-x-3 pl-3 border-l border-slate-800">
+            <span class="text-xs font-semibold px-2 py-1 bg-purple-950/50 border border-purple-800/40 rounded text-purple-300">
+              <i class="lucide-user inline-block w-3 h-3 mr-1"></i>{{ authenticatedUser }}
+            </span>
+            <button @click="logout" class="text-xs text-red-400 hover:text-red-300 transition">Logout</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN INTERACTIVE SECTION -->
+    <main class="flex-grow flex flex-col relative">
+
+      <!-- ================= SCREEN 1: SECURE LOGIN ================= -->
+      <section v-if="!authenticatedUser" class="flex-grow flex items-center justify-center px-4 py-12">
+        <div class="w-full max-w-md bg-slate-950/80 border border-purple-900/40 p-8 rounded-2xl shadow-2xl shadow-purple-950/20 backdrop-blur-lg">
+          <div class="text-center mb-8">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 flex items-center justify-center shadow-lg shadow-purple-500/20 mb-4">
+              <i class="lucide-shield-check text-white w-8 h-8"></i>
+            </div>
+            <h2 class="fancy-title text-2xl font-bold tracking-wide text-white">BETA ACCESS RESTRICTED</h2>
+            <p class="text-xs text-purple-400 mt-2 uppercase tracking-widest">Enter Credentials to Unlock Set 001</p>
+          </div>
+
+          <form @submit.prevent="handleLogin" class="space-y-5">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Username</label>
+              <div class="relative">
+                <i class="lucide-user absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-500 w-4 h-4"></i>
+                <input type="text" v-model="loginForm.username" required class="w-full bg-slate-900/60 border border-slate-800 focus:border-purple-500 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition" placeholder="e.g., tester01">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Security Key</label>
+              <div class="relative">
+                <i class="lucide-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-500 w-4 h-4"></i>
+                <input type="password" v-model="loginForm.password" required class="w-full bg-slate-900/60 border border-slate-800 focus:border-purple-500 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition" placeholder="••••••••">
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl transition shadow-lg shadow-indigo-600/20 text-sm tracking-wide uppercase">
+              Authenticate
+            </button>
+          </form>
+
+          <div class="mt-6 text-center">
+            <p class="text-[11px] text-slate-500">Contact @aia on the NightCafe community channel to obtain your beta tester authentication details.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SCREEN 2: WELCOME HUB ================= -->
+      <section v-if="authenticatedUser && currentScreen === 'welcome'" class="flex-grow max-w-6xl mx-auto w-full px-6 py-12 flex flex-col justify-center">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          
+          <!-- Banner & Info -->
+          <div class="lg:col-span-7 space-y-6">
+            <div class="inline-flex items-center space-x-2 bg-purple-950/60 border border-purple-800/60 px-3 py-1.5 rounded-full text-xs text-purple-300">
+              <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+              <span>BETA RELEASE V0.14 IN PROGRESS</span>
+            </div>
+            
+            <h1 class="fancy-title text-4xl sm:text-6xl font-extrabold leading-none text-white tracking-wide">
+              First Render<br>
+              <span class="bg-gradient-to-r from-amber-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">Set 001 Starter</span>
+            </h1>
+            
+            <p class="text-slate-300 leading-relaxed max-w-xl">
+              Welcome to the digital tabletop portal for **NightCafe: The Card Game**. Inspired by the NightCafe Creator artistic community, you play as an AI art generator competing to build visibility, earn reputation, manage Credits, and defend your Creator's Loyalty!
+            </p>
+
+            <div class="flex flex-wrap gap-4 pt-2">
+              <button @click="currentScreen = 'play'" class="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold rounded-xl transition shadow-lg shadow-orange-500/15 uppercase text-sm tracking-wider flex items-center">
+                Play Duel Now <i class="lucide-swords ml-2 w-4 h-4"></i>
+              </button>
+              <button @click="currentScreen = 'info'" class="px-6 py-4 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white font-bold rounded-xl transition text-sm tracking-wider uppercase flex items-center">
+                Tutorials & Rules <i class="lucide-book-open ml-2 w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Actions & Testers Info Box -->
+          <div class="lg:col-span-5 space-y-6">
+            <div class="bg-slate-950/80 border border-purple-900/40 p-6 rounded-2xl space-y-4 shadow-xl">
+              <h3 class="fancy-title text-lg font-bold text-amber-300 flex items-center">
+                <i class="lucide-message-square-plus mr-2 w-5 h-5"></i> Testers Questionnaire
+              </h3>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Your direct inputs make this game balanced and highly competitive. Share thoughts on:
+              </p>
+              <ul class="text-xs text-slate-300 space-y-2 list-disc pl-4">
+                <li>Is <strong>SD1.5</strong> immediate self-destruction logical?</li>
+                <li>How does the 20-cap on <strong>Reputation</strong> economy feel?</li>
+                <li>Does <strong>Aia</strong> going first feel balanced?</li>
+              </ul>
+              <button @click="openFeedbackModal('general')" class="w-full mt-2 py-3 bg-purple-950 hover:bg-purple-900 text-purple-200 border border-purple-800/60 font-semibold rounded-lg text-xs tracking-wider uppercase transition">
+                Open Integrated Feedback Form
+              </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div @click="currentScreen = 'index'" class="bg-slate-900/60 hover:bg-slate-900/90 border border-slate-800 p-4 rounded-xl cursor-pointer transition flex items-center space-x-3">
+                <i class="lucide-layers text-amber-400 w-5 h-5"></i>
+                <div>
+                  <h4 class="font-bold text-xs text-white">Deck Builder</h4>
+                  <p class="text-[10px] text-slate-400 mt-1">Manage & customize</p>
+                </div>
+              </div>
+              <div @click="currentScreen = 'vote'" class="bg-slate-900/60 hover:bg-slate-900/90 border border-slate-800 p-4 rounded-xl cursor-pointer transition flex items-center space-x-3">
+                <i class="lucide-vote text-purple-400 w-5 h-5"></i>
+                <div>
+                  <h4 class="font-bold text-xs text-white">A/B Card Art</h4>
+                  <p class="text-[10px] text-slate-400 mt-1">Vote on designs</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= SCREEN 3: RULES & TUTORIALS ================= -->
+      <section v-if="authenticatedUser && currentScreen === 'info'" class="flex-grow max-w-7xl mx-auto w-full px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Document Navigator Sidebar -->
+        <div class="lg:col-span-3 space-y-2 bg-slate-950/40 p-4 rounded-xl border border-slate-900 self-start">
+          <h3 class="fancy-title text-xs font-bold text-slate-400 px-3 pb-3 uppercase tracking-wider border-b border-slate-900">Game Manuals</h3>
+          <button v-for="doc in documents" :key="doc.id" @click="activeDocId = doc.id" 
+                  :class="['w-full text-left px-3 py-2.5 rounded-lg text-xs font-semibold transition flex items-center space-x-2', activeDocId === doc.id ? 'bg-gradient-to-r from-purple-950 to-indigo-950 text-purple-200 border-l-4 border-purple-500' : 'text-slate-400 hover:bg-slate-900/80 hover:text-white']">
+            <i :class="['w-4 h-4', activeDocId === doc.id ? 'text-purple-400' : 'text-slate-500']"></i>
+            <span class="truncate">{{ doc.title }}</span>
+          </button>
+        </div>
+
+        <!-- Document Viewer Content Area -->
+        <div class="lg:col-span-9 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-6 sm:p-10 shadow-xl overflow-y-auto max-h-[75vh]">
+          <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+            <div>
+              <span class="text-[10px] text-amber-400 font-extrabold uppercase tracking-widest">Document {{ activeDocId.toUpperCase() }}</span>
+              <h2 class="fancy-title text-2xl font-bold text-white mt-1">{{ getActiveDoc.title }}</h2>
+            </div>
+            <button @click="currentScreen = 'welcome'" class="text-xs text-slate-400 hover:text-white flex items-center space-x-1">
+              <span>Back home</span> <i class="lucide-arrow-right w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <!-- Dynamic Markdown Renderer (HTML Mockup) -->
+          <div class="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed space-y-4">
+            <div v-html="renderMarkdown(getActiveDoc.content)"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SCREEN 4: CARD INDEX & DECK BUILDER ================= -->
+      <section v-if="authenticatedUser && currentScreen === 'index'" class="flex-grow max-w-7xl mx-auto w-full px-6 py-8 flex flex-col space-y-6">
+        
+        <!-- Selector Tab (Gallery vs Custom Deck Builder) -->
+        <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-4 gap-4">
+          <div class="flex space-x-2 bg-slate-950 p-1.5 rounded-xl border border-slate-900">
+            <button @click="indexSubTab = 'gallery'" :class="['px-4 py-2 rounded-lg text-xs font-bold uppercase transition', indexSubTab === 'gallery' ? 'bg-purple-900 text-white' : 'text-slate-400 hover:text-slate-200']">
+              Card Reference Gallery
+            </button>
+            <button @click="indexSubTab = 'deckbuilder'" :class="['px-4 py-2 rounded-lg text-xs font-bold uppercase transition', indexSubTab === 'deckbuilder' ? 'bg-purple-900 text-white' : 'text-slate-400 hover:text-slate-200']">
+              Custom Deck Builder
+            </button>
+          </div>
+
+          <div v-if="indexSubTab === 'gallery'" class="flex items-center space-x-3">
+            <label class="text-xs text-slate-400 font-semibold">Filter Type:</label>
+            <select v-model="cardFilter" class="bg-slate-900 border border-slate-800 text-xs text-white rounded-lg px-3 py-1.5 focus:outline-none focus:border-purple-500">
+              <option value="ALL">All Cards</option>
+              <option value="CREATORS">Creators</option>
+              <option value="MODELS">Models</option>
+              <option value="PROMPTS">Prompts</option>
+              <option value="MODIFIERS">Modifiers</option>
+              <option value="ARTIFACTS">Artifacts</option>
+              <option value="EVENTS">Events</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SUB TAB: GALLERY -->
+        <div v-if="indexSubTab === 'gallery'" class="grid grid-cols-1 md:grid-cols-12 gap-8 flex-grow">
+          
+          <!-- Grid of Cards -->
+          <div class="md:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-4 overflow-y-auto max-h-[70vh] pr-2">
+            <div v-for="card in filteredCards" :key="card.code" 
+                 @click="viewCardDetails(card)"
+                 class="group relative bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800/80 hover:border-amber-500/40 p-4 rounded-xl cursor-pointer transition shadow-lg flex flex-col justify-between h-64 overflow-hidden">
+              
+              <!-- Subtle Background Art Mock -->
+              <div class="absolute inset-0 bg-gradient-to-tr from-purple-950/20 to-indigo-950/10 opacity-30 group-hover:opacity-50 transition"></div>
+              
+              <div class="relative z-10 flex flex-col h-full justify-between">
+                <div>
+                  <div class="flex items-center justify-between text-[10px] font-bold tracking-widest text-slate-500">
+                    <span>{{ card.code }}</span>
+                    <span :class="rarityColor(card.rarity)">{{ card.rarity }}</span>
+                  </div>
+                  <h3 class="font-bold text-sm text-white group-hover:text-amber-300 transition mt-1.5 line-clamp-1">{{ card.name }}</h3>
+                  <span class="inline-block mt-1 text-[9px] px-2 py-0.5 bg-slate-800 rounded font-bold uppercase tracking-wider text-slate-300 border border-slate-700/50">
+                    {{ card.type }}
+                  </span>
+                </div>
+
+                <!-- Central graphic mock -->
+                <div class="my-2 h-20 rounded-lg bg-black/40 border border-slate-800/40 flex items-center justify-center relative overflow-hidden">
+                  <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-purple-900/20 to-slate-900/20"></div>
+                  <span class="text-xs text-slate-600 font-semibold uppercase tracking-widest">ARTWORK</span>
+                </div>
+
+                <div class="flex items-center justify-between text-xs font-semibold text-slate-400">
+                  <span v-if="card.credits || card.cost" class="text-amber-400">
+                    <i class="lucide-coins inline-block w-3 h-3 mr-1"></i>{{ card.credits || card.cost }}
+                  </span>
+                  <span v-if="card.loyalty" class="text-rose-500">
+                    <i class="lucide-heart inline-block w-3.5 h-3.5 mr-1"></i>{{ card.loyalty }}
+                  </span>
+                  <span v-if="card.quality" class="text-emerald-400">
+                    <i class="lucide-star inline-block w-3.5 h-3.5 mr-1"></i>Q:{{ card.quality }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Spotlight & Irregular Regions Detector -->
+          <div class="md:col-span-4 bg-slate-950/50 border border-slate-800/60 rounded-2xl p-6 self-start space-y-6">
+            <h3 class="fancy-title text-sm font-bold tracking-widest text-slate-400 uppercase border-b border-slate-900 pb-3">Card Spotlight</h3>
+
+            <div v-if="spotlightCard" class="space-y-6">
+              <!-- Interactive 3D Mockup Container -->
+              <div class="card-3d-wrap flex justify-center">
+                <div class="card-3d relative w-64 h-96 rounded-2xl bg-gradient-to-b from-slate-900 via-slate-950 to-black border-2 border-slate-800/60 p-5 flex flex-col justify-between shadow-2xl shadow-purple-950/30 overflow-hidden"
+                     @mousemove="handleCardTilt" @mouseleave="resetCardTilt" ref="tiltCard">
+                  
+                  <!-- Abstract Glowing Gradient Backdrop representing "NightCafe art generation" -->
+                  <div class="absolute -top-10 -left-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                  <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                  <!-- Irregular Hotspots SVG Glow Overlays -->
+                  <svg v-if="spotlightCard.type === 'Creator'" class="card-overlay" viewBox="0 0 256 384">
+                    <!-- Custom Irregular Poly Map Glows -->
+                    <polygon id="glow-ability-1" points="15,220 240,210 240,260 15,270" class="ability-glow" :class="{'active-hover': activeRegionGlow === 'ability-1'}" />
+                    <polygon id="glow-ability-2" points="15,275 240,265 240,315 15,325" class="ability-glow" :class="{'active-hover': activeRegionGlow === 'ability-2'}" />
+                    <polygon id="glow-ability-sig" points="15,330 240,320 240,370 15,375" class="ability-glow" :class="{'active-hover': activeRegionGlow === 'ability-sig'}" />
+                  </svg>
+
+                  <!-- Card Meta Info -->
+                  <div class="relative z-10 flex flex-col justify-between h-full">
+                    <div class="flex items-center justify-between text-[10px] font-bold text-slate-500 tracking-wider">
+                      <span>{{ spotlightCard.code }}</span>
+                      <span :class="rarityColor(spotlightCard.rarity)">{{ spotlightCard.rarity }}</span>
+                    </div>
+
+                    <!-- Title & Style Tag -->
+                    <div class="mt-2">
+                      <h2 class="fancy-title text-base font-extrabold text-white leading-tight tracking-wider">{{ spotlightCard.name }}</h2>
+                      <span class="inline-block mt-1 text-[8px] px-2 py-0.5 bg-slate-900 rounded border border-slate-800 text-slate-400 font-extrabold tracking-widest uppercase">
+                        {{ spotlightCard.type }}
+                      </span>
+                    </div>
+
+                    <!-- Central Simulated Art Screen -->
+                    <div class="relative my-3 h-28 rounded-xl bg-black/60 border border-slate-800/50 flex flex-col items-center justify-center p-3 text-center overflow-hidden">
+                      <div class="absolute inset-0 bg-radial-gradient from-indigo-950/40 via-transparent to-transparent"></div>
+                      <i class="lucide-image text-slate-700 w-8 h-8 mb-1.5"></i>
+                      <p class="text-[10px] font-semibold text-slate-500 max-w-[80%] italic">"{{ spotlightCard.desc || 'No preview art' }}"</p>
+                    </div>
+
+                    <!-- Static stats / descriptors block -->
+                    <div class="text-[11px] text-slate-400 leading-snug space-y-1">
+                      <p v-if="spotlightCard.loyalty"><strong class="text-rose-500">Loyalty:</strong> {{ spotlightCard.loyalty }}</p>
+                      <p v-if="spotlightCard.quality"><strong class="text-emerald-500">Quality:</strong> {{ spotlightCard.quality }}</p>
+                      <p v-if="spotlightCard.credits"><strong class="text-amber-500">Activation/Cost:</strong> {{ spotlightCard.credits }} Credits</p>
+                    </div>
+
+                    <!-- Interactive Region Mappings indicators (Hover to see where they are!) -->
+                    <div v-if="spotlightCard.type === 'Creator'" class="mt-3 pt-2 border-t border-slate-900 flex justify-around text-[9px] text-amber-500 font-bold uppercase tracking-wider">
+                      <span class="cursor-pointer hover:text-white" @mouseenter="activeRegionGlow = 'ability-1'" @mouseleave="activeRegionGlow = null">Ability 1</span>
+                      <span class="cursor-pointer hover:text-white" @mouseenter="activeRegionGlow = 'ability-2'" @mouseleave="activeRegionGlow = null">Ability 2</span>
+                      <span class="cursor-pointer hover:text-white" @mouseenter="activeRegionGlow = 'ability-sig'" @mouseleave="activeRegionGlow = null">Signature</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Extra Technical Cross References and Add To Custom Deck -->
+              <div class="space-y-4 pt-4 border-t border-slate-900">
+                <div>
+                  <h4 class="text-xs font-bold text-slate-300">Description & Rules text:</h4>
+                  <div class="text-xs text-slate-400 mt-1.5 leading-relaxed bg-slate-950 p-3.5 rounded-xl border border-slate-900" v-html="highlightGlossaryTerms(spotlightCard.text || spotlightCard.desc)"></div>
+                </div>
+
+                <!-- Actions inside card view -->
+                <div class="flex space-x-2">
+                  <button @click="addCardToActiveDeck(spotlightCard)" class="flex-grow py-2.5 bg-purple-950 hover:bg-purple-900 text-purple-200 border border-purple-800/60 font-semibold rounded-lg text-xs tracking-wider uppercase transition">
+                    Add to Deck
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="text-center py-12 text-slate-600">
+              <i class="lucide-layout-grid w-8 h-8 mx-auto mb-2 opacity-50"></i>
+              <p class="text-xs">Select a card from the reference grid to view visual interactive breakdown and detailed cross references.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SUB TAB: DECK BUILDER -->
+        <div v-if="indexSubTab === 'deckbuilder'" class="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-grow">
+          
+          <!-- Left side: Deck Managers & Prebuilts -->
+          <div class="lg:col-span-4 space-y-6">
+            <!-- Decks List -->
+            <div class="bg-slate-950/40 border border-slate-900 p-5 rounded-2xl space-y-4">
+              <div class="flex justify-between items-center border-b border-slate-900 pb-3">
+                <h3 class="fancy-title text-sm font-bold text-slate-300">Your Decks</h3>
+                <button @click="createNewCustomDeck" class="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center">
+                  <i class="lucide-plus w-3.5 h-3.5 mr-1"></i> New Deck
+                </button>
+              </div>
+
+              <div class="space-y-2.5 max-h-[40vh] overflow-y-auto">
+                <div v-for="deck in decks" :key="deck.id" 
+                     @click="selectDeck(deck)"
+                     :class="['p-3 rounded-xl border cursor-pointer transition flex items-center justify-between', selectedDeckId === deck.id ? 'bg-purple-950/30 border-purple-500' : 'bg-slate-900/40 border-slate-800/60 hover:bg-slate-900/80']">
+                  <div class="space-y-1">
+                    <span class="text-xs font-bold text-white block">{{ deck.name }}</span>
+                    <span class="text-[10px] text-slate-400 block">{{ countCardsInDeck(deck) }} / 40 Cards</span>
+                  </div>
+                  <div class="flex space-x-2">
+                    <button @click.stop="duplicateDeck(deck)" title="Duplicate" class="p-1.5 bg-slate-950 rounded hover:bg-slate-900 text-slate-400 hover:text-white transition">
+                      <i class="lucide-copy w-3.5 h-3.5"></i>
+                    </button>
+                    <button v-if="!deck.isPrebuilt" @click.stop="deleteDeck(deck)" title="Delete" class="p-1.5 bg-red-950 rounded hover:bg-red-900 text-red-400 hover:text-red-300 transition">
+                      <i class="lucide-trash w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Share Deck Panel -->
+            <div v-if="activeDeck && !activeDeck.isPrebuilt" class="bg-slate-950/40 border border-slate-900 p-5 rounded-2xl space-y-3">
+              <h4 class="font-bold text-xs text-amber-400 uppercase tracking-wider flex items-center">
+                <i class="lucide-share-2 mr-2 w-4 h-4"></i> Share Deck With Creators
+              </h4>
+              <p class="text-[11px] text-slate-400 leading-relaxed">
+                Do you think you built the ultimate control or aggro list? Submit your configuration to the creators to review.
+              </p>
+              <button @click="shareCustomDeck" class="w-full py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 text-slate-950 font-extrabold rounded-lg text-xs tracking-wider uppercase transition">
+                Submit Deck Configuration
+              </button>
+            </div>
+          </div>
+
+          <!-- Right side: Active Deck Editor -->
+          <div class="lg:col-span-8 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between">
+            <div v-if="activeDeck" class="space-y-6">
+              <div class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-900 pb-4">
+                <div>
+                  <input v-if="!activeDeck.isPrebuilt" type="text" v-model="activeDeck.name" class="bg-slate-900 border border-slate-800 text-sm font-bold text-white rounded px-3 py-1.5 focus:outline-none focus:border-purple-500">
+                  <h3 v-else class="text-sm font-bold text-white">{{ activeDeck.name }}</h3>
+                  <p class="text-[10px] text-slate-400 mt-1">Creator: {{ activeDeck.creatorCode }} • Models: {{ activeDeck.guaranteedModels.join(', ') }}</p>
+                </div>
+
+                <!-- Validation indicators badge -->
+                <div class="flex space-x-2">
+                  <span :class="['px-2.5 py-1 text-[10px] font-bold rounded-lg border uppercase tracking-wider', isDeckValid(activeDeck) ? 'bg-emerald-950/50 border-emerald-800 text-emerald-400' : 'bg-red-950/50 border-red-800 text-red-400']">
+                    {{ isDeckValid(activeDeck) ? 'Valid Deck' : 'Invalid Composition' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Deck Composition Rules Info Grid -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold text-slate-400">
+                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900">
+                  <span class="block text-[9px] text-slate-500 uppercase tracking-widest">Total Cards</span>
+                  <span class="text-white font-extrabold text-sm">{{ countCardsInDeck(activeDeck) }} / 40</span>
+                </div>
+                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900">
+                  <span class="block text-[9px] text-slate-500 uppercase tracking-widest">Creator</span>
+                  <span class="text-white font-extrabold text-sm">{{ activeDeck.creatorCode ? 1 : 0 }} / 1</span>
+                </div>
+                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900">
+                  <span class="block text-[9px] text-slate-500 uppercase tracking-widest">Guaranteed Models</span>
+                  <span class="text-white font-extrabold text-sm">{{ activeDeck.guaranteedModels.length }} / 2</span>
+                </div>
+                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900">
+                  <span class="block text-[9px] text-slate-500 uppercase tracking-widest">Shuffled Pile</span>
+                  <span class="text-white font-extrabold text-sm">{{ countShuffledDeck(activeDeck) }} / 37</span>
+                </div>
+              </div>
+
+              <!-- Cards in Deck Grid list -->
+              <div class="space-y-3">
+                <h4 class="text-xs font-bold text-slate-300">Shuffled Deck Pile:</h4>
+                <div v-if="Object.keys(activeDeck.shuffledCards).length === 0" class="text-center py-8 text-slate-600 bg-slate-950 rounded-xl border border-slate-900/50">
+                  <i class="lucide-inbox w-8 h-8 mx-auto mb-1.5 opacity-40"></i>
+                  <p class="text-xs">No cards added to the shuffled pile yet.</p>
+                </div>
+                
+                <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[35vh] overflow-y-auto pr-1">
+                  <div v-for="(qty, code) in activeDeck.shuffledCards" :key="code" class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex items-center justify-between">
+                    <div>
+                      <span class="text-[10px] text-slate-500 font-bold block leading-none mb-1">{{ code }}</span>
+                      <span class="text-xs font-bold text-white">{{ getCardByCode(code)?.name }}</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                      <button v-if="!activeDeck.isPrebuilt" @click="decreaseCardQty(activeDeck, code)" class="w-6 h-6 rounded bg-slate-950 text-slate-400 hover:text-white flex items-center justify-center">-</button>
+                      <span class="text-xs font-bold text-white px-2">{{ qty }}</span>
+                      <button v-if="!activeDeck.isPrebuilt" @click="increaseCardQty(activeDeck, code)" class="w-6 h-6 rounded bg-slate-950 text-slate-400 hover:text-white flex items-center justify-center">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            <div v-else class="text-center py-20 text-slate-600">
+              <i class="lucide-book-open w-12 h-12 mx-auto mb-3 opacity-40"></i>
+              <p class="text-sm">Select or create a deck structure on the left side menu to edit and audit composition parameters.</p>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ================= SCREEN 5: A/B TESTING CARD DESIGN ================= -->
+      <section v-if="authenticatedUser && currentScreen === 'vote'" class="flex-grow max-w-5xl mx-auto w-full px-6 py-12 flex flex-col justify-center space-y-8">
+        <div class="text-center max-w-xl mx-auto space-y-3">
+          <span class="text-[10px] text-purple-400 font-extrabold uppercase tracking-widest bg-purple-950/50 border border-purple-800/40 px-3 py-1 rounded-full">Community Art Survey</span>
+          <h2 class="fancy-title text-3xl font-bold text-white">Compare Design Options</h2>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            We are considering different card layout paradigms for Set 001. Please review these two simulated wireframes below and cast your vote dynamically.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          
+          <!-- Design A -->
+          <div @click="voteForDesign('A')" class="group relative bg-gradient-to-b from-slate-900 to-slate-950 border-2 hover:border-amber-500 border-slate-800 rounded-2xl p-6 cursor-pointer transition shadow-xl space-y-4">
+            <span class="absolute top-4 right-4 text-xs font-bold bg-slate-800 text-slate-300 px-2 py-1 rounded">Layout A: Classic border</span>
+            
+            <div class="h-80 w-56 mx-auto rounded-xl border border-slate-800 bg-black flex flex-col justify-between p-4 shadow-lg shadow-purple-950/20 relative overflow-hidden">
+              <div class="absolute inset-x-0 top-0 h-2/3 bg-gradient-to-b from-slate-900 to-transparent"></div>
+              <span class="text-[10px] text-slate-500 font-bold block">P-001 • Artist</span>
+              <h4 class="font-extrabold text-sm text-white mb-2 leading-none">GOOD OLD GREG</h4>
+              <div class="my-auto h-28 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-800/50 text-xs text-slate-500">Artwork Area</div>
+              <p class="text-[10px] text-slate-400 italic">"by Greg Rutkowski"</p>
+              <div class="text-[9px] text-amber-400 font-semibold border-t border-slate-900 pt-2 flex justify-between">
+                <span>Assigns Fantasy tag.</span>
+                <span>Cost: 1</span>
+              </div>
+            </div>
+
+            <div class="text-center pt-2">
+              <span class="inline-block px-4 py-2 bg-slate-950 text-xs font-bold text-slate-300 rounded-lg group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+                Select Layout A
+              </span>
+            </div>
+          </div>
+
+          <!-- Design B -->
+          <div @click="voteForDesign('B')" class="group relative bg-gradient-to-b from-slate-900 to-slate-950 border-2 hover:border-amber-500 border-slate-800 rounded-2xl p-6 cursor-pointer transition shadow-xl space-y-4">
+            <span class="absolute top-4 right-4 text-xs font-bold bg-slate-800 text-slate-300 px-2 py-1 rounded">Layout B: Full bleed / Clean text</span>
+
+            <div class="h-80 w-56 mx-auto rounded-xl border border-slate-800 bg-slate-900 flex flex-col justify-end p-4 shadow-lg shadow-purple-950/20 relative overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-b from-purple-950/10 via-black/40 to-black/90"></div>
+              <div class="relative z-10 space-y-2">
+                <span class="text-[9px] text-amber-400 font-extrabold uppercase">P-001 • Prompt</span>
+                <h4 class="font-extrabold text-sm text-white leading-none">GOOD OLD GREG</h4>
+                <p class="text-[10px] text-slate-300 italic">"by Greg Rutkowski"</p>
+                <div class="text-[9px] text-slate-400 leading-normal border-t border-slate-800 pt-2">
+                  Assigns Fantasy tag. If already Fantasy, +1 Quality instead.
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center pt-2">
+              <span class="inline-block px-4 py-2 bg-slate-950 text-xs font-bold text-slate-300 rounded-lg group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+                Select Layout B
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= SCREEN 6: PLAY SANDBOX (1V1 SOLE / MATCH) ================= -->
+      <section v-if="authenticatedUser && currentScreen === 'play'" class="flex-grow flex flex-col">
+        <!-- Interactive Playboard Top Bar -->
+        <div class="bg-slate-950/80 border-b border-slate-900 px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center space-x-4">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Quick Duel Sandbox Table</span>
+            <div class="flex space-x-1.5">
+              <button @click="resetLocalGame" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold rounded text-[10px] border border-slate-800 uppercase transition">
+                Reset Board
+              </button>
+            </div>
+          </div>
+
+          <!-- Standard Game status parameters indicators -->
+          <div class="flex items-center space-x-6 text-xs font-semibold">
+            <div class="flex items-center space-x-1">
+              <span class="text-slate-500">Current Turn:</span>
+              <span class="text-amber-400">Round {{ gameState.round }} • Turn {{ gameState.turnPlayer === 1 ? 'Player 1' : 'Player 2' }}</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button @click="passTurn" class="px-4 py-1.5 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white font-extrabold rounded-lg text-[10px] uppercase tracking-wider transition">
+                Pass Turn <i class="lucide-chevrons-right inline-block w-3 h-3 ml-1"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- The Interactive Battlefield Tabletop -->
+        <div class="flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
+          
+          <!-- Left side column: Player 1 (Bottom of table) & Player 2 (Top of table) stats and zones -->
+          <div class="lg:col-span-8 space-y-6 flex flex-col justify-between">
+            
+            <!-- OPPONENT FIELD AREA (Player 2) -->
+            <div class="bg-slate-950/40 border border-slate-900/60 rounded-2xl p-5 relative space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-900/80 pb-2">
+                <div class="flex items-center space-x-3">
+                  <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                  <h4 class="font-extrabold text-xs text-white">Player 2: Anonymous User (Horde Deck)</h4>
+                </div>
+                <div class="flex items-center space-x-4 text-xs font-bold">
+                  <span class="text-rose-500"><i class="lucide-heart inline-block w-3 h-3 mr-1"></i>Loyalty: {{ gameState.p2.loyalty }}</span>
+                  <span class="text-amber-400"><i class="lucide-coins inline-block w-3 h-3 mr-1"></i>Credits: {{ gameState.p2.credits }}</span>
+                  <span class="text-purple-400"><i class="lucide-award inline-block w-3 h-3 mr-1"></i>Rep: {{ gameState.p2.reputation }}</span>
+                </div>
+              </div>
+
+              <!-- Played Creation Slots -->
+              <div class="grid grid-cols-3 gap-4">
+                <div v-for="slot in gameState.p2.field" :key="slot.id" 
+                     class="p-3 bg-slate-900/50 border border-slate-800 rounded-xl relative h-32 flex flex-col justify-between overflow-hidden">
+                  <div class="flex justify-between items-center text-[9px] text-slate-500">
+                    <span>Slot {{ slot.id }}</span>
+                    <span v-if="slot.clipLocked" class="text-amber-400">CLIP-LOCKED</span>
+                  </div>
+                  <div v-if="slot.card" class="space-y-1">
+                    <span class="text-xs font-bold text-white block">{{ slot.card.name }}</span>
+                    <span class="text-[9px] text-slate-400 block">Q:{{ slot.card.quality }} • V:{{ slot.visibility }}</span>
+                  </div>
+                  <div v-else class="text-center my-auto">
+                    <span class="text-[10px] text-slate-600 block uppercase">Empty Slot</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PLAYER 1 ACTIVE BATTLE ZONE (Local Player) -->
+            <div class="bg-slate-950/40 border border-purple-900/30 rounded-2xl p-5 relative space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-900/80 pb-2">
+                <div class="flex items-center space-x-3">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                  <h4 class="font-extrabold text-xs text-white">Player 1: Aia (CLIP Resistance Deck)</h4>
+                </div>
+                <div class="flex items-center space-x-4 text-xs font-bold">
+                  <span class="text-rose-500"><i class="lucide-heart inline-block w-3 h-3 mr-1"></i>Loyalty: {{ gameState.p1.loyalty }}</span>
+                  <span class="text-amber-400"><i class="lucide-coins inline-block w-3 h-3 mr-1"></i>Credits: {{ gameState.p1.credits }}</span>
+                  <span class="text-purple-400"><i class="lucide-award inline-block w-3 h-3 mr-1"></i>Rep: {{ gameState.p1.reputation }}</span>
+                </div>
+              </div>
+
+              <!-- Played Creation Slots -->
+              <div class="grid grid-cols-3 gap-4">
+                <div v-for="slot in gameState.p1.field" :key="slot.id" 
+                     @click="interactWithSlot(slot, 1)"
+                     class="p-3 bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 rounded-xl relative h-32 flex flex-col justify-between cursor-pointer transition overflow-hidden">
+                  <div class="flex justify-between items-center text-[9px] text-slate-500">
+                    <span>Slot {{ slot.id }}</span>
+                    <span v-if="slot.clipLocked" class="text-amber-400">CLIP-LOCKED</span>
+                  </div>
+                  <div v-if="slot.card" class="space-y-1">
+                    <span class="text-xs font-bold text-white block">{{ slot.card.name }}</span>
+                    <span class="text-[9px] text-slate-400 block">Q:{{ slot.card.quality }} • V:{{ slot.visibility }}</span>
+                  </div>
+                  <div v-else class="text-center my-auto">
+                    <span class="text-[10px] text-slate-600 block uppercase">Empty Slot</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ACTION SELECTOR & IN-HAND CARDS CONTROLLER -->
+            <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-4">
+              <h5 class="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-900 pb-2">Action Controller</h5>
+              
+              <div class="flex flex-wrap gap-3">
+                <button @click="triggerSimulatedAction('activateModel')" class="px-4 py-2 bg-purple-950 text-purple-200 border border-purple-800/50 rounded-lg text-xs font-bold uppercase transition">
+                  Activate Model (Cost: varies)
+                </button>
+                <button @click="triggerSimulatedAction('applyClipLock')" class="px-4 py-2 bg-slate-900 text-slate-300 border border-slate-800 rounded-lg text-xs font-bold uppercase transition">
+                  Apply CLIP-LOCK (Aia Passive)
+                </button>
+                <button @click="triggerSimulatedAction('remix')" class="px-4 py-2 bg-slate-900 text-slate-300 border border-slate-800 rounded-lg text-xs font-bold uppercase transition">
+                  Remix Creation
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right side column: Game Log, Active Modifiers & Resolution triggers -->
+          <div class="lg:col-span-4 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-5 flex flex-col justify-between">
+            <div class="space-y-4 flex-grow">
+              <h4 class="fancy-title text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-900 pb-3">Activity & Duel Log</h4>
+              
+              <div class="bg-black/40 border border-slate-900 rounded-xl p-4 h-80 overflow-y-auto space-y-2.5 text-xs text-slate-400 code-font">
+                <div v-for="(log, idx) in gameLogs" :key="idx" class="leading-relaxed border-b border-slate-900/30 pb-1">
+                  <span class="text-purple-400 font-bold">[{{ log.time }}]</span> {{ log.msg }}
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-900 space-y-3 mt-4">
+              <button @click="resolveMatchSimulated(1)" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-extrabold rounded-lg text-xs tracking-wider uppercase transition">
+                Simulate Victory: Player 1
+              </button>
+              <button @click="resolveMatchSimulated(2)" class="w-full py-3 bg-slate-900 text-slate-400 hover:text-white border border-slate-800 font-bold rounded-lg text-xs tracking-wider uppercase transition">
+                Simulate Victory: Player 2
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FLOATING INTEGRATED FEEDBACK PANEL -->
+    <div v-if="feedbackFormOpen" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div class="w-full max-w-lg bg-slate-950 border border-purple-900/40 p-6 rounded-2xl shadow-2xl relative space-y-5">
+        
+        <button @click="feedbackFormOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+          <i class="lucide-x w-6 h-6"></i>
+        </button>
+
+        <div class="text-center space-y-2">
+          <h3 class="fancy-title text-xl font-bold text-white uppercase tracking-wider">Beta Feedback Terminal</h3>
+          <p class="text-xs text-slate-400">Your inputs route directly into the active development files.</p>
+        </div>
+
+        <form @submit.prevent="submitIntegratedFeedback" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Feedback Category</label>
+            <select v-model="feedbackData.category" required class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-purple-500">
+              <option value="General">General Opinion / Suggestion</option>
+              <option value="Bug">Technical Bug Report</option>
+              <option value="Balance">Mechanics & Balance Balance</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Detailed Description</label>
+            <textarea v-model="feedbackData.description" required rows="5" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-white focus:outline-none focus:border-purple-500 placeholder-slate-600" placeholder="Please elaborate here. Detail specific cards or rules if possible..."></textarea>
+          </div>
+
+          <button type="submit" class="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold rounded-lg text-xs tracking-wider uppercase transition shadow-lg shadow-indigo-600/10">
+            Submit Feedback Log
+          </button>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-purple-950 bg-black/60 px-6 py-4 text-center text-xs text-slate-500 flex flex-wrap justify-between items-center gap-4">
+      <p>© 2026 NightCafe: The Card Game. Created for beta testing. Built on Supabase integration framework.</p>
+      <div class="flex space-x-4">
+        <button @click="openFeedbackModal('general')" class="hover:text-purple-400 transition">Feedback Form</button>
+        <span class="text-slate-700">|</span>
+        <button @click="currentScreen = 'info'" class="hover:text-purple-400 transition">View Rulebook</button>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // =========================================================================
+    //                        NC CONFIGURATION ZONE
+    // =========================================================================
+    // Copy/Paste your actual Supabase parameters here!
+    const SUPABASE_URL = "https://owfdyaarhkqmrvckvmgp.supabase.co"; 
+    const SUPABASE_ANON_KEY = "sb_publishable_M8FDLK2p-IzbgVXpPy_Wig_60ji5uo8"; 
+
+    // Google Form URLs. (If Supabase keys are active, feedback logs will save directly 
+    // to your SQL database instead. Otherwise, they fall back to these forms.)
+    const GOOGLE_FORM_FEEDBACK_URL = "https://docs.google.com/forms/d/e/1FAIpQLSd7gqV3895e6_R9aB8N_testKeyPlaceholder/formResponse";
+    const GOOGLE_FORM_DECK_URL     = "https://docs.google.com/forms/d/e/1FAIpQLSd7gqV3895e6_R9aB8N_testKeyPlaceholder/formResponse";
+    const GOOGLE_FORM_VOTE_URL     = "https://docs.google.com/forms/d/e/1FAIpQLSd7gqV3895e6_R9aB8N_testKeyPlaceholder/formResponse";
+    const GOOGLE_FORM_MATCH_URL    = "https://docs.google.com/forms/d/e/1FAIpQLSd7gqV3895e6_R9aB8N_testKeyPlaceholder/formResponse";
+    // =========================================================================
+
+    // Create the DB Client dynamically based on keys configuration
+    const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY) ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    const { createApp, ref, onMounted, computed } = Vue;
+
+    createApp({
+      setup() {
+        // App Core state
+        const currentScreen = ref('welcome');
+        const authenticatedUser = ref(null);
+        const supabaseConnected = ref(!!supabase); 
+        const indexSubTab = ref('gallery');
+        const cardFilter = ref('ALL');
+        const feedbackFormOpen = ref(false);
+
+        // Access Whitelist Login credentials
+        const loginForm = ref({ username: '', password: '' });
+
+        // Database variables
+        const customDecks = ref([]);
+        const activeDocId = ref('rulebook');
+        const cardFilterType = ref('ALL');
+        const spotlightCard = ref(null);
+        const activeRegionGlow = ref(null);
+        const tiltCard = ref(null);
+
+        // Community surveys/feedbacks state parameters
+        const feedbackData = ref({ category: 'General', description: '' });
+
+        // Static documentation dictionary
+        const documents = ref([
+          { id: 'rulebook', title: 'Quick Duel Rulebook', content: `# DOCUMENT 2: QUICK DUEL RULEBOOK\n\n## INTRODUCTION\nThis rulebook covers everything you need to play a complete Quick Duel game using the First Render starter decks. Quick Duel is a two-player format. Each player fields one Creator card and a 40-card deck.\n\n## THE GOLDEN RULE\nIf a card's text contradicts these rules, the card text takes priority. Cards are exceptions to rules, not errors.` },
+          { id: 'faq', title: 'FAQ & Edge Cases', content: `# DOCUMENT 3: FAQ\n\n### A. CREDITS AND ECONOMY\n**Q: Do I have to pay Credits to play cards from my hand?**\nYes. Every card has a printed Credit cost. Pay it when you play the card.\n\n### B. ALGORITHM SWAP\n**Q: Does ALGORITHM SWAP change the actual Style tag?**\nFor existing Creations, they are treated as having the swapped tag while active, then revert.` },
+          { id: 'quickreference', title: 'Quick Reference Sheet', content: `# DOCUMENT 5: QUICK REFERENCE SHEET\n\n## TURN ORDER\n1. REFRESH: Gain Credits, Reduce Runtimes, Gain Visibility, Collect Reputation.\n2. MAIN: Play Models, Activate, Play Modifiers/Artifacts/Events, Creator abilities, Remix.\n3. END: Carryover, Creator Stress, Draw.` },
+          { id: 'tutorial1a', title: 'Tutorial: Horde Deck', content: `# DOCUMENT 1A: TUTORIAL — HORDE STARTER DECK\nThis tutorial teaches you everything you need to play with the Anonymous User - Horde deck from scratch.` },
+          { id: 'tutorial1b', title: 'Tutorial: CLIP Deck', content: `# DOCUMENT 1B: TUTORIAL — CLIP STARTER DECK\nAdvanced Tutorial focusing on what makes the Aia - CLIP Starter Deck different. Aia starts with 11 Loyalty.` },
+          { id: 'deckbuilder', title: "Deck Builder's Guide", content: `# DOCUMENT 6: DECK BUILDER'S GUIDE\n\n## DECK BUILDING RULES (QUICK DUEL)\n- 40 cards total per deck (including Creator and 2 guaranteed models).\n- Shuffled deck: exactly 37 cards.\n- Maximum 3 copies of any single non-Creator card.` },
+          { id: 'feedback_message', title: 'Beta Tester Message', content: `# DOCUMENT 8: BETA TESTER MESSAGE\n\nHello and thank you! You are holding one of the first copies of NightCafe: The Card Game. Your feedback on Reputation economy, SD1.5 self-destruction, and CLIP-LOCK application is vital.` }
+        ]);
+
+        // Cards data dictionary
+        const cards = ref([
+          { code: 'C-001', name: 'Aia', type: 'Creator', rarity: 'Rare', loyalty: 11, desc: 'CLIP Resistance Faction. Passive: once per turn apply CLIP-LOCK. Active 1: Overrender. Active 2: Positive Feedback.', text: 'Passive: CLIP-LOCK. Active 1: Overrender (3 Rep): target opponent Creation -1 Quality. Active 2: Positive Feedback (5 Rep).' },
+          { code: 'C-002', name: 'Anonymous User', type: 'Creator', rarity: 'Mythic', loyalty: 16, desc: 'Legends / Newbies Faction. Passive: Copycat. Active 1: First Post. Active 2: Flood the Feed.', text: 'Passive: Copycat style steal. Active 1: First Post (1 Rep): next Model activation costs 2 fewer Credits.' },
+          { code: 'M-001', name: 'Coherent (Low Settings)', type: 'Model', rarity: 'Rare', cost: 3, quality: 3, desc: 'Compatible: Fantasy, Landscape. Incompatible: Portrait.', text: 'Play 3. Activate 4. Quality 3. Runtime 2. Guaranteed in Aia Deck.' },
+          { code: 'M-002', name: 'Juggernaut v9', type: 'Model', rarity: 'Uncommon', cost: 2, quality: 2, desc: 'Compatible: Portrait, Abstract. Incompatible: Landscape.', text: 'Play 2. Activate 3. Quality 2. Runtime 2. Abstract Creations gain +1 Quality.' },
+          { code: 'M-003', name: 'SDXL', type: 'Model', rarity: 'Uncommon', cost: 1, quality: 2, desc: 'Compatible: Portrait, Landscape. Incompatible: Abstract.', text: 'Play 1. Activate 2. Quality 2. Runtime 1. Portrait Creations enter with +1 Visibility.' },
+          { code: 'M-004', name: 'Stable Diffusion 1.5', type: 'Model', rarity: 'Common', cost: 0, quality: 1, desc: 'Compatible: Fantasy, Landscape. Incompatible: Portrait.', text: 'Play 0. Activate 0. Quality 1. Runtime 1. Creations gain 1 extra Glitch. Destroyed immediately without Prompt.' },
+          { code: 'P-001', name: 'Good Old Greg', type: 'Prompt', rarity: 'Common', cost: 1, desc: 'Assigns Fantasy tag. If already Fantasy, +1 Quality.' },
+          { code: 'P-002', name: 'Men...', type: 'Prompt', rarity: 'Common', cost: 1, desc: 'Assigns Portrait tag. +1 Visibility on entry.' },
+          { code: 'P-003', name: 'Copycat...', type: 'Prompt', rarity: 'Uncommon', cost: 3, desc: 'Cannot be affected by opponent modifiers/abilities for 3 turns.' },
+          { code: 'P-006', name: 'Are You Crazy?!', type: 'Prompt', rarity: 'Uncommon', cost: 3, desc: '+3 Quality, +1 Runtime.' },
+          { code: 'MO-001', name: 'The Astronaut', type: 'Modifier', rarity: 'Mythic', cost: 3, desc: 'Universal Creator. +3 Loyalty on attach. +2 Visibility.' },
+          { code: 'MO-007', name: 'PRO Subscription', type: 'Modifier', rarity: 'Uncommon', cost: 3, desc: 'Once per turn, activate Model at half cost.' },
+          { code: 'A-001', name: 'Centaur Problem', type: 'Artifact', rarity: 'Uncommon', cost: 2, desc: 'Fantasy Creations enter with 1 Glitch.' },
+          { code: 'E-001', name: 'Mass Report', type: 'Event', rarity: 'Uncommon', cost: 7, desc: 'Cancel played modifier. Costs 7 Reputation.' }
+        ]);
+
+        // Prebuilt Decks configuration structures
+        const prebuilts = ref([
+          {
+            id: 'prebuilt_aia',
+            name: 'Aia — CLIP Resistance Deck',
+            isPrebuilt: true,
+            creatorCode: 'C-001',
+            guaranteedModels: ['M-001', 'M-002'],
+            shuffledCards: { 'P-003': 3, 'P-006': 3, 'MO-001': 1, 'MO-007': 1, 'A-001': 2 }
+          },
+          {
+            id: 'prebuilt_anon',
+            name: 'Anonymous User — Horde Deck',
+            isPrebuilt: true,
+            creatorCode: 'C-002',
+            guaranteedModels: ['M-003', 'M-004'],
+            shuffledCards: { 'P-001': 3, 'P-002': 3, 'MO-001': 1, 'E-001': 1 }
+          }
+        ]);
+
+        const selectedDeckId = ref('prebuilt_aia');
+
+        // Play engine state tracking variables
+        const gameState = ref({
+          round: 1,
+          turnPlayer: 1, // 1 or 2
+          p1: { loyalty: 11, credits: 5, reputation: 0, field: [{ id: 1, card: null, visibility: 0, clipLocked: false }, { id: 2, card: null, visibility: 0, clipLocked: false }, { id: 3, card: null, visibility: 0, clipLocked: false }] },
+          p2: { loyalty: 16, credits: 4, reputation: 0, field: [{ id: 1, card: null, visibility: 0, clipLocked: false }, { id: 2, card: null, visibility: 0, clipLocked: false }, { id: 3, card: null, visibility: 0, clipLocked: false }] }
+        });
+
+        const gameLogs = ref([
+          { time: '14:30', msg: 'Match Sandbox Session started. Setup active components.' }
+        ]);
+
+        onMounted(() => {
+          // Check session persistence
+          const user = sessionStorage.getItem('authenticatedUser');
+          if (user) {
+            authenticatedUser.value = user;
+          }
+          // Fetch custom decks from localStorage
+          const cached = localStorage.getItem('nc_custom_decks');
+          if (cached) {
+            customDecks.value = JSON.parse(cached);
+          }
+          spotlightCard.value = cards.value[0];
+        });
+
+        // ---------------- AUTHENTICATION & SECURITY ----------------
+        // SHA-256 Hashing Implementation for Secure Zero-Cost Passwords
+        async function sha256(string) {
+          const utf8 = new TextEncoder().encode(string);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        const handleLogin = async () => {
+          const passHash = await sha256(loginForm.value.password);
+          
+          if (supabase) {
+            // Live Database Query Mode
+            const { data, error } = await supabase
+              .from('beta_users')
+              .select('*')
+              .eq('username', loginForm.value.username)
+              .eq('password_hash', passHash)
+              .single();
+
+            if (data) {
+              authenticatedUser.value = data.username;
+              sessionStorage.setItem('authenticatedUser', data.username);
+              currentScreen.value = 'welcome';
+            } else {
+              alert("Incorrect whitelist credentials. Please try again!");
+            }
+          } else {
+            // Local fallback sandbox mode
+            if (loginForm.value.username && loginForm.value.password) {
+              authenticatedUser.value = loginForm.value.username;
+              sessionStorage.setItem('authenticatedUser', loginForm.value.username);
+              currentScreen.value = 'welcome';
+            }
+          }
+        };
+
+        const logout = () => {
+          authenticatedUser.value = null;
+          sessionStorage.removeItem('authenticatedUser');
+          currentScreen.value = 'login';
+        };
+
+        // ---------------- DOCUMENTATION RENDERING ----------------
+        const renderMarkdown = (text) => {
+          // Basic parser
+          return text
+            .replace(/\n\n/g, '<br><br>')
+            .replace(/##\s+(.*)/g, '<h3 class="text-lg font-bold text-amber-300 mt-4 mb-2">$1</h3>')
+            .replace(/#\s+(.*)/g, '<h2 class="text-xl font-extrabold text-white mb-3">$1</h2>')
+            .replace(/\*\*([^*]+)\*\*/g, '<strong class="text-white">$1</strong>');
+        };
+
+        const highlightGlossaryTerms = (text) => {
+          if (!text) return '';
+          const terms = ['CLIP-LOCK', 'Glitch token', 'Remix Queue', 'Creator Stress', 'Reputation', 'Loyalty'];
+          let parsed = text;
+          terms.forEach(term => {
+            const regex = new RegExp(`\\b${term}\\b`, 'gi');
+            parsed = parsed.replace(regex, `<span class="text-amber-300 font-bold underline cursor-pointer" onclick="alert('Glossary Concept: ${term}')">${term}</span>`);
+          });
+          return parsed;
+        };
+
+        // ---------------- CARD UTILITIES & 3D GALLERY ----------------
+        const getActiveDoc = computed(() => {
+          return documents.value.find(d => d.id === activeDocId.value) || documents.value[0];
+        });
+
+        const filteredCards = computed(() => {
+          if (cardFilter.value === 'ALL') return cards.value;
+          return cards.value.filter(c => c.type.toUpperCase() === cardFilter.value);
+        });
+
+        const viewCardDetails = (card) => {
+          spotlightCard.value = card;
+        };
+
+        const handleCardTilt = (e) => {
+          if (!tiltCard.value) return;
+          const card = tiltCard.value;
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const rX = ((y / rect.height) - 0.5) * -25;
+          const rY = ((x / rect.width) - 0.5) * 25;
+          card.style.transform = `rotateX(${rX}deg) rotateY(${rY}deg) scale(1.03)`;
+        };
+
+        const resetCardTilt = () => {
+          if (!tiltCard.value) return;
+          tiltCard.value.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+        };
+
+        const rarityColor = (rarity) => {
+          switch(rarity) {
+            case 'Mythic': return 'text-purple-400';
+            case 'Rare': return 'text-amber-400';
+            case 'Uncommon': return 'text-sky-400';
+            default: return 'text-slate-400';
+          }
+        };
+
+        // ---------------- DECK BUILDER LOGIC ----------------
+        const decks = computed(() => {
+          return [...prebuilts.value, ...customDecks.value];
+        });
+
+        const activeDeck = computed(() => {
+          return decks.value.find(d => d.id === selectedDeckId.value);
+        });
+
+        const selectDeck = (deck) => {
+          selectedDeckId.value = deck.id;
+        };
+
+        const createNewCustomDeck = () => {
+          const newDeck = {
+            id: 'custom_' + Date.now(),
+            name: 'New Custom Deck ' + (customDecks.value.length + 1),
+            isPrebuilt: false,
+            creatorCode: 'C-001',
+            guaranteedModels: ['M-001', 'M-002'],
+            shuffledCards: {}
+          };
+          customDecks.value.push(newDeck);
+          selectedDeckId.value = newDeck.id;
+          saveCustomDecks();
+        };
+
+        const deleteDeck = (deck) => {
+          customDecks.value = customDecks.value.filter(d => d.id !== deck.id);
+          selectedDeckId.value = 'prebuilt_aia';
+          saveCustomDecks();
+        };
+
+        const saveCustomDecks = () => {
+          localStorage.setItem('nc_custom_decks', JSON.stringify(customDecks.value));
+        };
+
+        const countCardsInDeck = (deck) => {
+          let count = 1 + deck.guaranteedModels.length; // Creator + Guaranteed models
+          Object.values(deck.shuffledCards).forEach(qty => count += qty);
+          return count;
+        };
+
+        const countShuffledDeck = (deck) => {
+          let count = 0;
+          Object.values(deck.shuffledCards).forEach(qty => count += qty);
+          return count;
+        };
+
+        const isDeckValid = (deck) => {
+          return countCardsInDeck(deck) === 40 && countShuffledDeck(deck) === 37;
+        };
+
+        const getCardByCode = (code) => {
+          return cards.value.find(c => c.code === code);
+        };
+
+        const addCardToActiveDeck = (card) => {
+          if (!activeDeck.value || activeDeck.value.isPrebuilt) {
+            alert("Create or select an editable Custom Deck first!");
+            return;
+          }
+          if (card.type === 'Creator' || card.type === 'Model') {
+            alert("Creator and core guaranteed Models are assigned automatically.");
+            return;
+          }
+          const currentQty = activeDeck.value.shuffledCards[card.code] || 0;
+          if (currentQty >= 3) {
+            alert("Maximum 3 copies of any non-Creator card allowed!");
+            return;
+          }
+          activeDeck.value.shuffledCards[card.code] = currentQty + 1;
+          saveCustomDecks();
+        };
+
+        const increaseCardQty = (deck, code) => {
+          const qty = deck.shuffledCards[code] || 0;
+          if (qty < 3) {
+            deck.shuffledCards[code] = qty + 1;
+            saveCustomDecks();
+          }
+        };
+
+        const decreaseCardQty = (deck, code) => {
+          const qty = deck.shuffledCards[code] || 0;
+          if (qty <= 1) {
+            delete deck.shuffledCards[code];
+          } else {
+            deck.shuffledCards[code] = qty - 1;
+          }
+          saveCustomDecks();
+        };
+
+        const duplicateDeck = (deck) => {
+          const copy = {
+            id: 'custom_' + Date.now(),
+            name: deck.name + ' (Copy)',
+            isPrebuilt: false,
+            creatorCode: deck.creatorCode,
+            guaranteedModels: [...deck.guaranteedModels],
+            shuffledCards: { ...deck.shuffledCards }
+          };
+          customDecks.value.push(copy);
+          selectedDeckId.value = copy.id;
+          saveCustomDecks();
+        };
+
+        // ---------------- FEEDBACK FORM SUBMISSION ----------------
+        const openFeedbackModal = (type) => {
+          feedbackData.value.category = type === 'general' ? 'General' : 'Bug';
+          feedbackFormOpen.value = true;
+        };
+
+        const submitIntegratedFeedback = async () => {
+          if (supabase) {
+            // Write directly to live Supabase DB
+            const { error } = await supabase
+              .from('feedback_logs')
+              .insert([{ 
+                username: authenticatedUser.value, 
+                category: feedbackData.value.category, 
+                description: feedbackData.value.description 
+              }]);
+
+            if (!error) {
+              alert("Feedback logged to Supabase! Thank you.");
+              feedbackFormOpen.value = false;
+              feedbackData.value.description = '';
+              return;
+            }
+          }
+
+          // Fallback: Headless posting to Google Forms
+          const payload = new URLSearchParams();
+          payload.append('entry.123456789', authenticatedUser.value);
+          payload.append('entry.987654321', feedbackData.value.category);
+          payload.append('entry.555666777', feedbackData.value.description);
+
+          fetch(GOOGLE_FORM_FEEDBACK_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: payload
+          }).then(() => {
+            alert("Your beta logs have been reported via Google Forms! Thank you.");
+            feedbackFormOpen.value = false;
+            feedbackData.value.description = '';
+          });
+        };
+
+        const shareCustomDeck = async () => {
+          if (!activeDeck.value) return;
+          const jsonString = JSON.stringify(activeDeck.value);
+
+          if (supabase) {
+            const { error } = await supabase
+              .from('shared_decks')
+              .insert([{ 
+                username: authenticatedUser.value, 
+                deck_name: activeDeck.value.name, 
+                deck_data: activeDeck.value 
+              }]);
+
+            if (!error) {
+              alert("Deck configuration saved to Supabase successfully!");
+              return;
+            }
+          }
+
+          // Fallback: Headless posting to Google Forms
+          const payload = new URLSearchParams();
+          payload.append('entry.333444555', authenticatedUser.value);
+          payload.append('entry.444555666', jsonString);
+
+          fetch(GOOGLE_FORM_DECK_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: payload
+          }).then(() => {
+            alert("Your custom deck configuration has been shared with the developers!");
+          });
+        };
+
+        const voteForDesign = (layoutOption) => {
+          // Send Art layout metrics
+          const payload = new URLSearchParams();
+          payload.append('entry.888999000', authenticatedUser.value);
+          payload.append('entry.111222333', layoutOption);
+
+          fetch(GOOGLE_FORM_VOTE_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: payload
+          }).then(() => {
+            alert(`Vote cast successfully for Layout ${layoutOption}!`);
+          });
+        };
+
+        // ---------------- SANDBOX BATTLE ENGINE ----------------
+        const triggerSimulatedAction = (action) => {
+          const timeStr = new Date().toLocaleTimeString();
+          if (action === 'activateModel') {
+            gameState.value.p1.credits -= 3;
+            gameState.value.p1.field[0].card = cards.value[2]; // Summon Coherent
+            gameState.value.p1.field[0].visibility = 1;
+            gameLogs.value.unshift({ time: timeStr, msg: "Player 1 activated Coherent (Low Settings). Cost: 3 Credits." });
+          } else if (action === 'applyClipLock') {
+            gameState.value.p1.field[0].clipLocked = true;
+            gameLogs.value.unshift({ time: timeStr, msg: "Aia Passive triggered: CLIP-LOCK applied to Slot 1." });
+          } else if (action === 'remix') {
+            gameLogs.value.unshift({ time: timeStr, msg: "Creation in Slot 1 placed in Remix Queue." });
+          }
+        };
+
+        const passTurn = () => {
+          const timeStr = new Date().toLocaleTimeString();
+          gameState.value.turnPlayer = gameState.value.turnPlayer === 1 ? 2 : 1;
+          if (gameState.value.turnPlayer === 1) {
+            gameState.value.round += 1;
+          }
+          gameLogs.value.unshift({ time: timeStr, msg: `Turn passes. It is now Player ${gameState.value.turnPlayer}'s turn.` });
+        };
+
+        const resetLocalGame = () => {
+          gameState.value = {
+            round: 1,
+            turnPlayer: 1,
+            p1: { loyalty: 11, credits: 5, reputation: 0, field: [{ id: 1, card: null, visibility: 0, clipLocked: false }, { id: 2, card: null, visibility: 0, clipLocked: false }, { id: 3, card: null, visibility: 0, clipLocked: false }] },
+            p2: { loyalty: 16, credits: 4, reputation: 0, field: [{ id: 1, card: null, visibility: 0, clipLocked: false }, { id: 2, card: null, visibility: 0, clipLocked: false }, { id: 3, card: null, visibility: 0, clipLocked: false }] }
+          };
+          gameLogs.value = [{ time: new Date().toLocaleTimeString(), msg: "Duel board reset. Hotseat simulation primed." }];
+        };
+
+        const resolveMatchSimulated = (winnerNum) => {
+          const duration = gameState.value.round;
+          alert(`Simulated Victory recorded! Reporting match log.`);
+          
+          // Automated Game Data Logging to Google Forms
+          const payload = new URLSearchParams();
+          payload.append('entry.777888999', winnerNum === 1 ? 'Aia (P1)' : 'Anon (P2)');
+          payload.append('entry.222333444', duration);
+
+          fetch(GOOGLE_FORM_MATCH_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: payload
+          });
+        };
+
+        return {
+          currentScreen,
+          authenticatedUser,
+          supabaseConnected,
+          indexSubTab,
+          cardFilter,
+          feedbackFormOpen,
+          loginForm,
+          customDecks,
+          activeDocId,
+          cardFilterType,
+          spotlightCard,
+          activeRegionGlow,
+          tiltCard,
+          feedbackData,
+          documents,
+          cards,
+          prebuilts,
+          selectedDeckId,
+          gameState,
+          gameLogs,
+          handleLogin,
+          logout,
+          renderMarkdown,
+          highlightGlossaryTerms,
+          getActiveDoc,
+          filteredCards,
+          viewCardDetails,
+          handleCardTilt,
+          resetCardTilt,
+          rarityColor,
+          decks,
+          activeDeck,
+          selectDeck,
+          createNewCustomDeck,
+          deleteDeck,
+          countCardsInDeck,
+          countShuffledDeck,
+          isDeckValid,
+          getCardByCode,
+          addCardToActiveDeck,
+          increaseCardQty,
+          decreaseCardQty,
+          duplicateDeck,
+          openFeedbackModal,
+          submitIntegratedFeedback,
+          shareCustomDeck,
+          voteForDesign,
+          triggerSimulatedAction,
+          passTurn,
+          resetLocalGame,
+          resolveMatchSimulated
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
