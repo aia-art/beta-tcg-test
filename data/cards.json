@@ -1,0 +1,499 @@
+{
+  "meta": { "set": "001", "setName": "First Render", "version": "0.14" },
+  "cards": [
+    {
+      "id": "C-001", "name": "Aia", "type": "Creator", "rarity": "Rare", "rarityDots": 3,
+      "factions": ["CLIP Resistance", "Experimentalist"],
+      "loyalty": 11,
+      "startingBonus": { "type": "credit", "amount": 1, "display": "+1 Credit" },
+      "illustration": "Aia in fox mask and hood, surrounded by floating iridescent Coherent imagery, holographic prompt panels, ink sketches",
+      "illustrationMood": "iridescent",
+      "passive": {
+        "name": "CLIP-LOCK Mastery",
+        "text": "Once per turn, during your Main Phase, you may apply CLIP-LOCK to one of your active Coherent Creations. Coherent Creations do not enter with CLIP-LOCK automatically.",
+        "keywords": ["CLIP-LOCK", "Coherent", "Main Phase"]
+      },
+      "abilities": [
+        {
+          "num": 1, "name": "Overrender",
+          "cost": { "reputation": 3 },
+          "text": "Target one opponent Creation. It loses 1 Quality. If that Creation already has 1 or more Glitch tokens, it loses 1 additional Quality instead (total −2). If its Quality reaches 0, it is destroyed immediately.",
+          "keywords": ["Quality", "Glitch token"]
+        },
+        {
+          "num": 2, "name": "Positive Feedback",
+          "cost": { "reputation": 5 },
+          "text": "Choose one of your active CLIP-LOCKed Creations and remove its CLIP-LOCK. Gain Loyalty equal to the number of full turns that Creation has been CLIP-LOCKed, maximum 3. The turn CLIP-LOCK was applied does not count.",
+          "keywords": ["CLIP-LOCK", "Loyalty"]
+        },
+        {
+          "num": 3, "name": "Iridescent Shift",
+          "cost": { "reputation": 6 },
+          "text": "Target one of your active Creations. It gains 2 Visibility Counters and cannot be targeted by opponent single-target abilities until the start of your next turn.",
+          "keywords": ["Visibility Counter"]
+        },
+        {
+          "num": "signature", "name": "Copy That!",
+          "cost": { "loyalty": 4, "reputation": 14 },
+          "text": "Choose up to 3 of your active CLIP-LOCKed Creations. Remove CLIP-LOCK from each chosen Creation. Each deals 1 Loyalty damage to target opponent Creator. If 2 or more target the same Creator, that Creator also loses 2 Reputation.",
+          "keywords": ["CLIP-LOCK", "Loyalty", "Reputation"]
+        }
+      ],
+      "favouritePrompt": {
+        "text": "\"vibrant expressionism by Aia, soft iridescent water reflections\"",
+        "subtype": "Atmosphere",
+        "effect": "The generated Creation gains +1 Quality and enters with 1 bonus Visibility Counter."
+      },
+      "creatorNotes": "always experimenting, never settling.",
+      "inDecks": { "deckA": 1, "deckB": 0 }
+    },
+    {
+      "id": "C-002", "name": "Anonymous User", "type": "Creator", "rarity": "Mythic", "rarityDots": 5,
+      "factions": ["Legends", "Newbies"],
+      "loyalty": 16,
+      "startingBonus": { "type": "reputation", "amount": 1, "display": "+1 Reputation" },
+      "illustration": "Anonymous figure in plain white mask, surrounded by dozens of identical low-quality portrait Creations flooding the frame, chaotic and overwhelming",
+      "illustrationMood": "chaotic",
+      "passive": {
+        "name": "Copycat",
+        "text": "Whenever this Creator generates a Creation that shares a Style tag with an opponent's active Creation, steal 2 Visibility Counters from that Creation (minimum 0). You choose if multiple are eligible.",
+        "keywords": ["Style tag", "Visibility Counter"]
+      },
+      "influence": {
+        "name": "Safety in Numbers",
+        "text": "At the start of each of your turns, all friendly Creations with 3 or fewer Visibility Counters cannot be targeted by opponent single-target abilities until the start of your next turn.",
+        "keywords": ["Visibility Counter"]
+      },
+      "abilities": [
+        {
+          "num": 1, "name": "First Post",
+          "cost": { "reputation": 1 },
+          "text": "Your next Model activation this turn costs 2 fewer Credits (minimum 0). Only usable if you control no active Creations on the field and none in your Queue (including Remix Queue). May be used on Turn 1.",
+          "keywords": ["Queue", "Remix Queue", "Credits"]
+        },
+        {
+          "num": 2, "name": "Flood the Feed",
+          "cost": { "reputation": 6 },
+          "text": "Move all your currently queued Creations to the field immediately, regardless of remaining Runtime. Each Creation that arrives this way enters with 1 additional Glitch token. Slot overflow rules apply normally.",
+          "keywords": ["Queue", "Runtime", "Glitch token", "Slot Overflow"]
+        },
+        {
+          "num": 3, "name": "More Than You",
+          "cost": { "reputation": 4 },
+          "text": "If you control more active Creations than your opponent, target opponent Creator loses 1 Loyalty. You gain 1 Loyalty for each point of Loyalty removed this way.",
+          "keywords": ["Loyalty"]
+        },
+        {
+          "num": "signature", "name": "Going Viral",
+          "cost": { "loyalty": 4, "reputation": 12 },
+          "text": "All your active Creations immediately gain 3 Visibility Counters. For each Creation that crosses the Liked or Featured threshold this way, target opponent Creator loses 1 Loyalty.",
+          "keywords": ["Visibility Counter", "Liked", "Featured", "Loyalty"]
+        }
+      ],
+      "favouritePrompt": {
+        "text": "\"a beautiful wonan\"",
+        "subtype": "Style",
+        "subtypeDetail": "Portrait",
+        "effect": "The generated Creation gains 2 bonus Visibility Counters on its first 2 turns on the field, but enters with 1 Glitch token."
+      },
+      "inDecks": { "deckA": 0, "deckB": 1 }
+    },
+
+    {
+      "id": "M-001", "name": "Coherent (Low Settings)", "type": "Model", "rarity": "Rare", "rarityDots": 3,
+      "subtype": "Standard — Coherent Variant",
+      "playCost": 3, "activateCost": 4, "quality": 3, "runtime": 2,
+      "compatible": ["Fantasy", "Landscape"], "incompatible": ["Portrait"],
+      "illustration": "Glowing render interface, soft geometric forms emerging from light, clean and precise",
+      "illustrationMood": "precise",
+      "effect": "Creations generated by this Model enter the field with 1 bonus Visibility Counter. CLIP-LOCK may be applied to Creations generated by this Model.",
+      "keywords": ["Visibility Counter", "CLIP-LOCK"],
+      "inDecks": { "deckA": 1, "deckB": 0 }, "guaranteed": "deckA"
+    },
+    {
+      "id": "M-002", "name": "Juggernaut v9", "type": "Model", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Standard",
+      "playCost": 2, "activateCost": 3, "quality": 2, "runtime": 2,
+      "compatible": ["Portrait", "Abstract"], "incompatible": ["Landscape"],
+      "illustration": "Heavy industrial render engine, bold colours, dramatic lighting, powerful and dynamic",
+      "illustrationMood": "bold",
+      "effect": "Abstract Creations generated by this Model gain +1 Quality on entry.",
+      "keywords": ["Abstract", "Quality"],
+      "inDecks": { "deckA": 1, "deckB": 0 }, "guaranteed": "deckA"
+    },
+    {
+      "id": "M-003", "name": "SDXL", "type": "Model", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Standard",
+      "playCost": 1, "activateCost": 2, "quality": 2, "runtime": 1,
+      "compatible": ["Portrait", "Landscape"], "incompatible": ["Abstract", "Atmosphere"],
+      "illustration": "Clean digital render space, neutral tones, versatile and workmanlike",
+      "illustrationMood": "neutral",
+      "effect": "Portrait Creations generated by this Model enter with 1 bonus Visibility Counter and 1 Glitch token.",
+      "keywords": ["Portrait", "Visibility Counter", "Glitch token"],
+      "inDecks": { "deckA": 0, "deckB": 1 }, "guaranteed": "deckB"
+    },
+    {
+      "id": "M-004", "name": "Stable Diffusion 1.5", "type": "Model", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Standard",
+      "playCost": 0, "activateCost": 0, "quality": 1, "runtime": 1,
+      "compatible": ["Fantasy", "Landscape"], "incompatible": ["Portrait", "Atmosphere"],
+      "illustration": "Grainy, slightly corrupted render space, nostalgic early AI aesthetic, rough and unpredictable",
+      "illustrationMood": "grainy",
+      "effect": "All Creations generated by this Model enter with 1 additional Glitch token, regardless of any other modifiers or effects.",
+      "keywords": ["Glitch token"],
+      "designNote": "Without a Quality-boosting Prompt or compatible Style, SD1.5 Creations are destroyed immediately on entry — this is intentional.",
+      "inDecks": { "deckA": 0, "deckB": 1 }, "guaranteed": "deckB"
+    },
+
+    {
+      "id": "P-001", "name": "Good Old Greg", "type": "Prompt", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Artist", "keyword": "by Greg Rutkowski", "cost": 1,
+      "illustration": "Dramatic fantasy oil painting aesthetic, classical epic composition, warm light",
+      "illustrationMood": "epic",
+      "effect": "Assigns the Fantasy Style tag to the generated Creation. If this Creation already has the Fantasy Style tag from another source, it gains +1 Quality instead. If the activating Model is Stable Diffusion 1.5, this Creation also gains 1 bonus Visibility Counter on entry.",
+      "compatibleModels": "All",
+      "keywords": ["Fantasy", "Style tag", "Quality", "Visibility Counter"],
+      "inDecks": { "deckA": 0, "deckB": 3 }
+    },
+    {
+      "id": "P-002", "name": "Men...", "type": "Prompt", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Style", "keyword": "beautiful woman", "cost": 1,
+      "illustration": "Yet another AI portrait of a woman, slightly off, slightly familiar, suspiciously generic",
+      "illustrationMood": "generic",
+      "effect": "Assigns the Portrait Style tag to the generated Creation. That Creation gains 1 bonus Visibility Counter on entry.",
+      "compatibleModels": "All except Coherent variants",
+      "keywords": ["Portrait", "Style tag", "Visibility Counter"],
+      "inDecks": { "deckA": 0, "deckB": 3 }
+    },
+    {
+      "id": "P-003", "name": "Copycat... I Mean, Copygazelle...", "type": "Prompt", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Negative", "keyword": "Liz Gael", "cost": 3,
+      "illustration": "Elegant referential artwork, layered style echoes, something borrowed, something new",
+      "illustrationMood": "layered",
+      "effect": "The generated Creation cannot be affected by opponent Modifiers, Artifacts, abilities or Glitch tokens for 3 turns after it enters the field.",
+      "compatibleModels": "All",
+      "keywords": ["Modifier", "Artifact", "Glitch token", "Remix Queue"],
+      "inDecks": { "deckA": 3, "deckB": 0 }
+    },
+    {
+      "id": "P-004", "name": "Did You Steal This Prompt?", "type": "Prompt", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Artist", "keyword": "by JB", "cost": 1,
+      "illustration": "Atmospheric moody render, someone else's aesthetic worn like a costume, beautiful and slightly guilty",
+      "illustrationMood": "guilty",
+      "effect": "The generated Creation gains 2 bonus Visibility Counters on entry and 1 Glitch token on entry. This Glitch token cannot be removed or negated by any ability or effect until the start of your second turn after this Creation entered the field.",
+      "compatibleModels": "All",
+      "keywords": ["Visibility Counter", "Glitch token"],
+      "inDecks": { "deckA": 0, "deckB": 2 }
+    },
+    {
+      "id": "P-005", "name": "Here Goes the Paragraph", "type": "Prompt", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Atmosphere", "keyword": "narrative prompt", "cost": 2,
+      "illustration": "A prompt box overflowing with text, chaotic word salad, something surprisingly coherent emerging",
+      "illustrationMood": "chaotic",
+      "effect": "The generated Creation enters with 2 Glitch tokens and 2 bonus Visibility Counters.",
+      "compatibleModels": "All except Coherent variants",
+      "keywords": ["Glitch token", "Visibility Counter"],
+      "inDecks": { "deckA": 0, "deckB": 2 }
+    },
+    {
+      "id": "P-006", "name": "Are You Crazy?!", "type": "Prompt", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Style", "keyword": "long coherent prompt", "cost": 3,
+      "illustration": "An impossibly long prompt scrolling across a render screen, someone clearly having a great time",
+      "illustrationMood": "intense",
+      "effect": "The generated Creation gains +3 Quality but its Runtime increases by 1.",
+      "compatibleModels": "Coherent variants and Stable Diffusion 1.5",
+      "keywords": ["Quality", "Runtime"],
+      "inDecks": { "deckA": 3, "deckB": 0 }
+    },
+    {
+      "id": "P-007", "name": "What's Wrong with the Hands?", "type": "Prompt", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Negative", "keyword": "poorly drawn hands", "cost": 1,
+      "illustration": "Seven fingers, backwards thumbs, a hand that is also somehow a foot, confidently rendered",
+      "illustrationMood": "absurd",
+      "effect": "The generated Creation gains +1 Quality.",
+      "compatibleModels": "All",
+      "keywords": ["Quality"],
+      "inDecks": { "deckA": 3, "deckB": 0 }
+    },
+    {
+      "id": "P-008", "name": "So That's How They Trained It...", "type": "Prompt", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Negative", "keyword": "watermark", "cost": 2,
+      "illustration": "Faint Getty Images watermark visible beneath a pristine AI render, knowingly presented",
+      "illustrationMood": "ironic",
+      "effect": "The generated Creation gains +1 Quality and is permanently immune to Watermark Artifact effects for the duration of its time on the field.",
+      "compatibleModels": "All",
+      "keywords": ["Quality", "Artifact"],
+      "inDecks": { "deckA": 0, "deckB": 0 }
+    },
+    {
+      "id": "P-009", "name": "Another Landscape", "type": "Prompt", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Style", "keyword": "oil painting landscape", "cost": 1,
+      "illustration": "Sweeping painterly hills, golden hour, AI brushwork that almost looks like a real painting",
+      "illustrationMood": "pastoral",
+      "effect": "Assigns the Landscape Style tag to the generated Creation.",
+      "compatibleModels": "All",
+      "keywords": ["Landscape", "Style tag"],
+      "inDecks": { "deckA": 2, "deckB": 0 }
+    },
+    {
+      "id": "P-010", "name": "What's That?", "type": "Prompt", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Artist", "keyword": "Salvador Dalí", "cost": 1,
+      "illustration": "Melting clocks, impossible architecture, a dreamscape that refuses to make any sense whatsoever",
+      "illustrationMood": "surreal",
+      "effect": "The generated Creation gains 2 bonus Visibility Counters on entry and 1 Glitch token on entry.",
+      "compatibleModels": "All",
+      "keywords": ["Visibility Counter", "Glitch token"],
+      "inDecks": { "deckA": 1, "deckB": 1 }
+    },
+
+    {
+      "id": "MO-001", "name": "The Astronaut", "type": "Modifier", "rarity": "Mythic", "rarityDots": 5,
+      "subtype": "Universal Creator", "cost": 3, "duration": "3 turns",
+      "attachesTo": "Any friendly Creator",
+      "illustration": "A lone astronaut figure suspended in a vast creative void, spotlight from above, beautiful and isolating",
+      "illustrationMood": "isolated",
+      "effect": "While attached, the target Creator gains: +3 Loyalty immediately on attachment; all Creations they generate enter with 2 bonus Visibility Counters; all their active Creations gain 1 bonus Visibility Counter at the start of each of your turns (in addition to the standard gain).\n\nOn detach (after 3 turns): each of that Creator's active Creations gains 1 Glitch token (CLIP-LOCK does not block this). Reputation from that Creator's Creations is halved next turn (round down, subject to cap).\n\nCannot be removed, negated or targeted by any card effect. Cannot be cancelled by Mass Report. Duration cannot be extended or reduced.",
+      "deckLimit": 1,
+      "flavourText": "The spotlight finds you. For now.",
+      "keywords": ["Loyalty", "Visibility Counter", "Glitch token", "CLIP-LOCK", "Mass Report"],
+      "inDecks": { "deckA": 1, "deckB": 1 }
+    },
+    {
+      "id": "MO-002", "name": "Anime LoRA", "type": "Modifier", "rarity": "Common", "rarityDots": 1,
+      "subtype": "LoRA", "cost": 1, "duration": "Permanent",
+      "attachesTo": "Any Model except Coherent variants",
+      "illustration": "Cel-shaded anime aesthetic overlay on a render interface, bright and clean",
+      "illustrationMood": "bright",
+      "effect": "Portrait and Fantasy Creations generated by this Model gain +1 Quality. Landscape Creations generated by this Model lose 1 Quality (minimum 1).",
+      "keywords": ["Portrait", "Fantasy", "Landscape", "Quality", "LoRA"],
+      "inDecks": { "deckA": 0, "deckB": 2 }
+    },
+    {
+      "id": "MO-003", "name": "Painting LoRA", "type": "Modifier", "rarity": "Common", "rarityDots": 1,
+      "subtype": "LoRA", "cost": 1, "duration": "Permanent",
+      "attachesTo": "Any Model",
+      "illustration": "Painterly textures bleeding into a digital render, brushstrokes and pixels coexisting",
+      "illustrationMood": "painterly",
+      "effect": "Abstract and Atmosphere Creations generated by this Model gain +1 Quality and 1 bonus Visibility Counter on entry.",
+      "keywords": ["Abstract", "Atmosphere", "Quality", "Visibility Counter", "LoRA"],
+      "inDecks": { "deckA": 2, "deckB": 0 }
+    },
+    {
+      "id": "MO-004", "name": "Realism LoRA", "type": "Modifier", "rarity": "Common", "rarityDots": 1,
+      "subtype": "LoRA", "cost": 1, "duration": "Permanent",
+      "attachesTo": "Any Model",
+      "illustration": "Hyperrealistic render overlay, photographic precision, every pore and pixel accounted for",
+      "illustrationMood": "hyperreal",
+      "effect": "Portrait Creations generated by this Model gain +2 Quality but their Runtime increases by 1.",
+      "keywords": ["Portrait", "Quality", "Runtime", "LoRA"],
+      "inDecks": { "deckA": 0, "deckB": 0 }
+    },
+    {
+      "id": "MO-005", "name": "Trending", "type": "Modifier", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Creator", "cost": 2, "duration": "3 rounds",
+      "attachesTo": "Any friendly Creator",
+      "illustration": "Upward arrow of light cutting through a crowded feed, one image rising above all others",
+      "illustrationMood": "rising",
+      "effect": "All Creations generated by the attached Creator enter the field with 1 bonus Visibility Counter.",
+      "keywords": ["Visibility Counter"],
+      "inDecks": { "deckA": 2, "deckB": 0 }
+    },
+    {
+      "id": "MO-006", "name": "Ban", "type": "Modifier", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Creator", "cost": 2, "duration": "1 turn per opponent Creator on field at time of play (minimum 1)",
+      "attachesTo": "Any Creator",
+      "illustration": "A crossed-circle stamp landing hard on a creator profile, red and absolute",
+      "illustrationMood": "severe",
+      "effect": "The affected Creator cannot activate abilities. Their active Creations generate no Reputation while this Modifier is attached. May be played on opponent Creators.",
+      "keywords": ["Reputation"],
+      "inDecks": { "deckA": 0, "deckB": 2 }
+    },
+    {
+      "id": "MO-007", "name": "PRO Subscription", "type": "Modifier", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Creator", "cost": 3, "duration": "3 turns",
+      "attachesTo": "Any friendly Creator",
+      "illustration": "Gleaming PRO badge on a creator profile, golden border, premium interface glow",
+      "illustrationMood": "premium",
+      "effect": "Once per turn, you may activate one Model at half its activation cost (round down). Grants access to PRO-Exclusive Models. Credit cap increases by 3. Gain 1 bonus Credit at the start of each of your turns. All Runtimes for this Creator's Creations are reduced by 1 (minimum 1).\n\nCannot be cancelled by Mass Report.\n\nOn expiry: Credit cap returns to 10. If you had more than 10 Credits at expiry, lose 5 Reputation. If Reputation reaches 0 or below, lose 1 Loyalty and reset Reputation to 0.",
+      "keywords": ["Credits", "Runtime", "Reputation", "Loyalty", "Mass Report"],
+      "inDecks": { "deckA": 1, "deckB": 0 }
+    },
+    {
+      "id": "MO-008", "name": "Featured", "type": "Modifier", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Creation", "cost": 2, "duration": "3 turns",
+      "attachesTo": "One of your active Creations with 6 or more Visibility Counters",
+      "illustration": "A single Creation in a spotlight on the NightCafe front page, everything else fading into shadow behind it",
+      "illustrationMood": "spotlight",
+      "effect": "Doubles Reputation generation for the attached Creation (subject to cap). That Creation may now be targeted by all abilities.\n\nWhenever any of your other active Creations receives a negative effect (Glitch token, Quality reduction, or similar), that effect is also applied to this Creation. This cannot be prevented by any means.\n\nIf this Creation's Visibility Counters drop below 6 while this Modifier is attached, it immediately loses 1 Quality and this Modifier is discarded. This cannot be prevented by any means.",
+      "keywords": ["Reputation", "Visibility Counter", "Glitch token", "Quality"],
+      "inDecks": { "deckA": 0, "deckB": 2 }
+    },
+    {
+      "id": "MO-009", "name": "Queue Skip", "type": "Modifier", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Model", "cost": 2, "duration": "Single use",
+      "attachesTo": "Any Model in the shared zone",
+      "illustration": "A render jumping forward in a queue line, everyone else frozen mid-wait",
+      "illustrationMood": "urgent",
+      "effect": "The next Creation generated by the attached Model enters the field immediately, bypassing its Runtime entirely. Discard this Modifier after it triggers.",
+      "keywords": ["Runtime", "Queue"],
+      "inDecks": { "deckA": 2, "deckB": 0 }
+    },
+    {
+      "id": "MO-010", "name": "Noise", "type": "Modifier", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Model", "cost": 1, "duration": "5 turns",
+      "attachesTo": "Any Model in the shared zone",
+      "illustration": "Static interference crawling across a render in progress, corrupted signal",
+      "illustrationMood": "corrupted",
+      "effect": "All Creations generated by the attached Model enter with −1 Quality (minimum 1) for the duration. May be played on any Model in the shared zone, including opponent-played Models.",
+      "keywords": ["Quality"],
+      "inDecks": { "deckA": 0, "deckB": 2 }
+    },
+
+    {
+      "id": "A-001", "name": "Centaur Problem", "type": "Artifact", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Anomaly", "cost": 2, "duration": "3 rounds",
+      "illustration": "A magnificently wrong centaur rendered with complete confidence, too many legs, proud of itself",
+      "illustrationMood": "absurd",
+      "effect": "All Fantasy Creations entering the field arrive with 1 Glitch token. At the start of each round, all existing Fantasy Creations on the field gain 1 Glitch token. Affects both players.\n\nAny player may spend 3 Credits during their Main Phase to remove this Artifact.",
+      "keywords": ["Fantasy", "Glitch token"],
+      "inDecks": { "deckA": 2, "deckB": 0 }
+    },
+    {
+      "id": "A-002", "name": "Queue Timeout", "type": "Artifact", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Anomaly", "cost": 2, "duration": "3 rounds",
+      "illustration": "A loading bar frozen at 99%, a cursor blinking in patient despair",
+      "illustrationMood": "frozen",
+      "effect": "All Model Runtimes increase by 1 turn for the duration. Affects existing queued Creations and all future Creations generated while active. Affects both players.\n\nAny player may spend 3 Credits during their Main Phase to remove this Artifact.",
+      "keywords": ["Runtime", "Queue"],
+      "inDecks": { "deckA": 0, "deckB": 2 }
+    },
+    {
+      "id": "A-003", "name": "Double Dragon Head", "type": "Artifact", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Anomaly", "cost": 2, "duration": "3 turns",
+      "illustration": "A dragon with two heads facing opposite directions, both equally confused",
+      "illustrationMood": "confused",
+      "effect": "Attach to one target Fantasy or Portrait Creation on the field. That Creation's Reputation generation is halved for the duration (round down). May be attached to any Creation on the field, including opponent Creations.\n\nAny player may spend 2 Credits during their Main Phase to remove this Artifact.",
+      "keywords": ["Fantasy", "Portrait", "Reputation"],
+      "inDecks": { "deckA": 0, "deckB": 1 }
+    },
+    {
+      "id": "A-004", "name": "Credit Drop", "type": "Artifact", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Condition", "cost": 0, "duration": "Immediate",
+      "illustration": "A shower of golden credit coins falling across the NightCafe interface, everyone equally surprised",
+      "illustrationMood": "celebratory",
+      "effect": "All players gain 3 bonus Credits immediately (subject to Credit cap).",
+      "keywords": ["Credits"],
+      "inDecks": { "deckA": 2, "deckB": 1 }
+    },
+    {
+      "id": "A-005", "name": "Server Overload", "type": "Artifact", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Condition", "cost": 8, "duration": "3 rounds",
+      "illustration": "Server racks glowing red, error messages cascading, everyone's renders slowing to a crawl",
+      "illustrationMood": "catastrophic",
+      "effect": "All Model activations cost 1 additional Credit for the duration. All active Creations generate 1 fewer Visibility Counter per turn (minimum 0). Affects both players.\n\nCannot be removed.",
+      "keywords": ["Credits", "Visibility Counter"],
+      "inDecks": { "deckA": 0, "deckB": 1 }
+    },
+    {
+      "id": "A-006", "name": "Algorithm Swap", "type": "Artifact", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Condition", "cost": 2, "duration": "Until the start of your next turn",
+      "illustration": "Two Style tag icons swapping positions on a recommendation feed, the content unchanged, the algorithm confused",
+      "illustrationMood": "surreal",
+      "effect": "Choose two Style tags. Until the start of your next turn, all existing Creations on the field and in Queues with one of the chosen Style tags are treated as having the other for all game purposes. When the effect ends, existing Creations revert to their original Style tags. Creations generated while this card is active are assigned the swapped Style tag permanently. Affects both players.",
+      "keywords": ["Style tag", "Queue"],
+      "inDecks": { "deckA": 1, "deckB": 0 }
+    },
+
+    {
+      "id": "E-001", "name": "Mass Report", "type": "Event", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Drama", "timing": "Instant",
+      "cost": 7, "costType": "reputation",
+      "illustration": "A report button being clicked by many hands simultaneously, a Modifier card dissolving mid-play",
+      "illustrationMood": "collective",
+      "effect": "May be played during either player's turn, in response to a Modifier card being played. Cancel that Modifier — it is discarded without effect. Mass Report is then discarded.\n\nCannot cancel The Astronaut or PRO Subscription.\n\nThis is the only Instant in First Render that may be played during the opponent's turn.",
+      "keywords": ["Modifier", "The Astronaut", "PRO Subscription"],
+      "inDecks": { "deckA": 0, "deckB": 0 }
+    },
+    {
+      "id": "E-002", "name": "Community Drama", "type": "Event", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Drama", "timing": "Instant", "cost": 7,
+      "illustration": "A comment section on fire, reactions everywhere, everyone watching someone else's problem",
+      "illustrationMood": "chaotic",
+      "effect": "Target opponent Creator loses 2 Loyalty. That Creator's controller draws 1 card.",
+      "keywords": ["Loyalty"],
+      "inDecks": { "deckA": 0, "deckB": 3 }
+    },
+    {
+      "id": "E-003", "name": "Prompt Theft", "type": "Event", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Drama", "timing": "Instant", "cost": 3,
+      "illustration": "A prompt being copied character by character from one screen to another, no shame, complete confidence",
+      "illustrationMood": "sneaky",
+      "effect": "During your Main Phase, if your opponent activated a Model during their most recent turn, you may play this card. Choose one of your Models in the Shared Zone and activate it, copying one Prompt used in the opponent's activation (if any). You pay your own Model's activation cost plus any LoRA surcharge. The copied Prompt does not need to be in your hand. Style compatibility is determined by your Model. This counts as your Model activation for this turn.",
+      "keywords": ["Main Phase", "LoRA", "Style tag"],
+      "inDecks": { "deckA": 0, "deckB": 3 }
+    },
+    {
+      "id": "E-004", "name": "Priority Rendering", "type": "Event", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Site Update", "timing": "Instant", "cost": 3,
+      "illustration": "A single render jumping to the front of a processing queue, green light, everything else waiting",
+      "illustrationMood": "efficient",
+      "effect": "Move one of your queued Creations to arrive at the start of your next turn, regardless of its remaining Runtime. Cannot target Creations in the Remix Queue.",
+      "keywords": ["Queue", "Runtime", "Remix Queue"],
+      "inDecks": { "deckA": 3, "deckB": 0 }
+    },
+    {
+      "id": "E-005", "name": "GPU Boost", "type": "Event", "rarity": "Common", "rarityDots": 1,
+      "subtype": "Site Update", "timing": "Instant", "cost": 2,
+      "illustration": "A graphics card glowing with effort, fans spinning fast, a render completing ahead of schedule",
+      "illustrationMood": "energetic",
+      "effect": "Reduce the Runtime of one of your queued Creations by 2 (minimum 1). Cannot target Creations in the Remix Queue.",
+      "keywords": ["Runtime", "Queue", "Remix Queue"],
+      "inDecks": { "deckA": 3, "deckB": 0 }
+    },
+    {
+      "id": "E-006", "name": "Queue Crash", "type": "Event", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Site Update", "timing": "Instant", "cost": 3,
+      "illustration": "A render queue collapsing, progress bars resetting, someone's afternoon thoroughly ruined",
+      "illustrationMood": "disruptive",
+      "effect": "Target one opponent queued Creation or one opponent Creation in the Remix Queue. Its Runtime increases by 2 (or return is delayed by 2 turns if in Remix Queue).",
+      "keywords": ["Queue", "Runtime", "Remix Queue"],
+      "inDecks": { "deckA": 0, "deckB": 3 }
+    },
+    {
+      "id": "E-007", "name": "Tip Received", "type": "Event", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Community Event", "timing": "Main Phase", "cost": 0,
+      "illustration": "A small notification lighting up a screen, a PRO badge glowing warm, a creator quietly pleased",
+      "illustrationMood": "warm",
+      "effect": "Requires a PRO Subscription Modifier attached to one of your Creators. Gain 4 Credits immediately (subject to Credit cap).",
+      "keywords": ["PRO Subscription", "Credits"],
+      "inDecks": { "deckA": 2, "deckB": 0 }
+    },
+    {
+      "id": "E-008", "name": "Generation Cancelled", "type": "Event", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Site Update", "timing": "Instant", "cost": 2,
+      "illustration": "A cancel button mid-press, a half-formed image dissolving back into nothing",
+      "illustrationMood": "abrupt",
+      "effect": "Target one of your opponent's queued Creations. Remove it from the Queue. Its controller does not lose Loyalty — it never entered public view. Credits spent on its activation are not refunded. Cannot target Creations in the Remix Queue.",
+      "keywords": ["Queue", "Loyalty", "Credits", "Remix Queue"],
+      "inDecks": { "deckA": 2, "deckB": 0 }
+    },
+    {
+      "id": "E-009", "name": "Daily Challenge: Abstractions", "type": "Event", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Daily Challenge", "timing": "Main Phase", "cost": 2,
+      "illustration": "A NightCafe challenge banner, geometric abstract forms competing for attention, everyone trying their best",
+      "illustrationMood": "competitive",
+      "effect": "Duration: This round. All Abstract Creations on the field generate double Reputation this round (subject to cap). The player who gains the most Reputation from Abstract Creations this round gains 3 bonus Reputation at the end of the round (subject to cap).",
+      "keywords": ["Abstract", "Reputation"],
+      "inDecks": { "deckA": 2, "deckB": 0 }
+    },
+    {
+      "id": "E-010", "name": "Daily Challenge: Portraits", "type": "Event", "rarity": "Uncommon", "rarityDots": 2,
+      "subtype": "Daily Challenge", "timing": "Main Phase", "cost": 2,
+      "illustration": "A NightCafe challenge banner, dozens of near-identical AI women staring from thumbnails, the challenge briefly regretting itself",
+      "illustrationMood": "ironic",
+      "effect": "Duration: This round. All Portrait Creations on the field generate double Reputation this round (subject to cap). Each time a Portrait Creation enters the field this round, its controller gains 1 bonus Visibility Counter on it immediately. The player who controls the most Portrait Creations at the end of this round gains 3 bonus Reputation (subject to cap).",
+      "keywords": ["Portrait", "Reputation", "Visibility Counter"],
+      "inDecks": { "deckA": 0, "deckB": 3 }
+    }
+  ]
+}

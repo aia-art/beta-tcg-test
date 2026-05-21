@@ -1,0 +1,60 @@
+{
+  "prebuilt": [
+    {
+      "id": "deckA",
+      "name": "Aia — CLIP Starter Deck",
+      "subtitle": "CLIP Resistance · Control",
+      "description": "Protect. Lock. Overrender. Win with Copy That! Aia plays slow and deep — build a small number of powerful, CLIP-LOCKed Creations and use them as weapons. Patient, precise, and devastating at full power.",
+      "creator": "C-001",
+      "guaranteedModels": ["M-001", "M-002"],
+      "cards": {
+        "P-003": 3, "P-006": 3, "P-007": 3, "P-009": 2, "P-010": 1,
+        "MO-001": 1, "MO-003": 2, "MO-005": 2, "MO-009": 2, "MO-007": 1,
+        "A-001": 2, "A-004": 2, "A-006": 1,
+        "E-004": 3, "E-005": 3, "E-007": 2, "E-008": 2, "E-009": 2
+      },
+      "deckSize": 37,
+      "totalWithExtras": 40,
+      "archetypes": ["Control", "Protection", "Late Game"],
+      "difficulty": "Intermediate"
+    },
+    {
+      "id": "deckB",
+      "name": "Anonymous User — Horde Starter Deck",
+      "subtitle": "Legends / Newbies · Aggression",
+      "description": "Generate. Flood. Push Visibility. Win with Going Viral before opponent stabilises. Anon is chaotic, fast, and overwhelming — get as many Creations on the field as possible and push for the Liked and Featured thresholds.",
+      "creator": "C-002",
+      "guaranteedModels": ["M-003", "M-004"],
+      "cards": {
+        "P-001": 3, "P-002": 3, "P-004": 2, "P-005": 2, "P-010": 1,
+        "MO-001": 1, "MO-002": 2, "MO-006": 2, "MO-008": 2, "MO-010": 2,
+        "A-002": 2, "A-003": 1, "A-004": 1, "A-005": 1,
+        "E-002": 3, "E-003": 3, "E-006": 3, "E-010": 3
+      },
+      "deckSize": 37,
+      "totalWithExtras": 40,
+      "archetypes": ["Aggression", "Flood", "Early Game"],
+      "difficulty": "Beginner"
+    }
+  ],
+  "buildRules": {
+    "totalCards": 40,
+    "shuffledDeck": 37,
+    "creatorCards": 1,
+    "guaranteedModels": 2,
+    "maxCopiesPerCard": 3,
+    "creditCurve": {
+      "0": { "min": 2, "max": 3 },
+      "1": { "min": 7, "max": 10 },
+      "2": { "min": 9, "max": 13 },
+      "3": { "min": 6, "max": 9 },
+      "4+": { "min": 2, "max": 4 }
+    },
+    "typeRatios": {
+      "Prompt":   { "min": 10, "max": 13 },
+      "Modifier": { "min": 6,  "max": 9  },
+      "Artifact": { "min": 3,  "max": 5  },
+      "Event":    { "min": 10, "max": 13 }
+    }
+  }
+}
