@@ -1,1319 +1,2557 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NightCafe: The Card Game - Beta Portal</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Vue 3 CDN -->
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Supabase JS Library CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background: radial-gradient(circle at center, #0d0b18 0%, #05040a 100%);
-      color: #e2e8f0;
-    }
-    .fancy-title {
-      font-family: 'Cinzel', serif;
-    }
-    .code-font {
-      font-family: 'Fira Code', monospace;
-    }
-    /* 3D Tilt Card Effects */
-    .card-3d-wrap {
-      perspective: 800px;
-    }
-    .card-3d {
-      transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
-      transform-style: preserve-3d;
-    }
-    /* Glow highlights for specific card regions */
-    .ability-glow {
-      fill: rgba(212, 175, 55, 0);
-      stroke: rgba(212, 175, 55, 0);
-      stroke-width: 2.5;
-      transition: all 0.25s ease;
-    }
-    .ability-glow.active-hover {
-      fill: rgba(212, 175, 55, 0.12);
-      stroke: rgba(251, 191, 36, 1);
-      filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
-    }
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #08070e;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #25223c;
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #443e74;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NightCafe: The Card Game — First Render</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+/* ============================================================
+   CSS VARIABLES — Café Ledger palette
+============================================================ */
+:root {
+  --bg:           #F2EDE4;
+  --bg-dark:      #E8E1D6;
+  --surface:      #FDFAF6;
+  --surface-warm: #F7F2EA;
+  --text:         #1C150E;
+  --text-mid:     #4A3D30;
+  --text-muted:   #8C7B6B;
+  --accent:       #B8842A;
+  --accent-light: #D4A855;
+  --accent-glow:  rgba(184,132,42,0.35);
+  --border:       #D8CFBF;
+  --border-light: #EBE4D8;
+  --shadow:       rgba(28,21,14,0.10);
+  --shadow-strong:rgba(28,21,14,0.22);
+
+  /* Type colors */
+  --c-creator:  #8B3A3A;
+  --c-model:    #2C5F7A;
+  --c-prompt:   #4A7255;
+  --c-modifier: #7A5A2A;
+  --c-artifact: #6A3A7A;
+  --c-event:    #2A4A7A;
+
+  /* Rarity */
+  --r-common:   #6B6055;
+  --r-uncommon: #3D7A56;
+  --r-rare:     #B8842A;
+  --r-mythic:   #8B3DBB;
+
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body:    'Lora', Georgia, serif;
+  --font-mono:    'DM Mono', 'Courier New', monospace;
+  --font-ui:      'Lora', Georgia, serif;
+
+  --radius:  6px;
+  --radius-lg: 12px;
+  --transition: 0.22s ease;
+}
+
+/* ============================================================
+   RESET & BASE
+============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { cursor: pointer; font-family: inherit; }
+
+/* ============================================================
+   AUTH SCREEN
+============================================================ */
+#auth-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2rem; padding: 2rem;
+}
+#auth-screen.hidden { display: none; }
+.auth-logo {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 300;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.auth-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.2;
+}
+.auth-subtitle {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text-muted);
+}
+.auth-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem 2.5rem;
+  width: 100%; max-width: 380px;
+  box-shadow: 0 4px 24px var(--shadow);
+  display: flex; flex-direction: column; gap: 1.2rem;
+}
+.auth-box label {
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.auth-box input {
+  width: 100%; padding: 0.75rem 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--text);
+  letter-spacing: 0.08em;
+  transition: border-color var(--transition);
+  outline: none;
+}
+.auth-box input:focus { border-color: var(--accent); }
+.auth-box input::placeholder { color: var(--text-muted); opacity: 0.5; }
+.auth-error {
+  font-size: 0.8rem;
+  color: #A03030;
+  font-family: var(--font-mono);
+  display: none;
+}
+.auth-error.visible { display: block; }
+.btn-primary {
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  transition: background var(--transition), transform 0.12s;
+}
+.btn-primary:hover { background: var(--accent); }
+.btn-primary:active { transform: scale(0.98); }
+.auth-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+  font-family: var(--font-mono);
+}
+
+/* ============================================================
+   APP SHELL
+============================================================ */
+#app { display: none; flex-direction: column; min-height: 100vh; }
+#app.visible { display: flex; }
+
+/* ============================================================
+   HEADER / NAV
+============================================================ */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex; align-items: center; gap: 0;
+  height: 60px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 1px 8px var(--shadow);
+}
+.header-logo {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  margin-right: auto;
+}
+.header-logo span {
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text-muted);
+}
+nav { display: flex; gap: 0; }
+nav button {
+  background: none; border: none;
+  padding: 0 1.4rem;
+  height: 60px;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--text-mid);
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition), border-color var(--transition);
+}
+nav button:hover { color: var(--text); }
+nav button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.header-actions { display: flex; gap: 0.75rem; margin-left: 1.5rem; }
+.btn-outline {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.4rem 1rem;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  transition: all var(--transition);
+}
+.btn-outline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ============================================================
+   SECTIONS
+============================================================ */
+main { flex: 1; }
+.section { display: none; }
+.section.active { display: block; }
+
+/* ============================================================
+   WELCOME SECTION
+============================================================ */
+#section-welcome {
+  min-height: calc(100vh - 60px);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 3rem;
+}
+#section-welcome.active { display: flex; }
+
+.welcome-header {
+  text-align: center;
+}
+.welcome-set-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+.welcome-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 300;
+  line-height: 1.1;
+  color: var(--text);
+}
+.welcome-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+.welcome-subtitle {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
+
+.welcome-message {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 3rem;
+  max-width: 640px;
+  width: 100%;
+  box-shadow: 0 4px 20px var(--shadow);
+}
+.welcome-message p {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--text-mid);
+  font-style: italic;
+}
+.welcome-message p + p { margin-top: 1rem; }
+.welcome-message h2 {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+.welcome-message ul {
+  list-style: none;
+  display: flex; flex-direction: column; gap: 0.4rem;
+}
+.welcome-message li {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--text-mid);
+  padding-left: 1.2rem;
+  position: relative;
+}
+.welcome-message li::before {
+  content: '—';
+  position: absolute; left: 0;
+  color: var(--accent);
+}
+
+.welcome-nav {
+  display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+}
+.welcome-nav-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 2rem;
+  min-width: 160px;
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  transition: all var(--transition);
+  box-shadow: 0 2px 12px var(--shadow);
+}
+.welcome-nav-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px var(--shadow-strong);
+}
+.welcome-nav-btn.primary {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+.welcome-nav-btn.primary:hover { background: var(--accent); border-color: var(--accent); }
+.wnb-icon { font-size: 1.6rem; }
+.wnb-label {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+}
+.wnb-sub {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+.welcome-nav-btn.primary .wnb-sub { color: rgba(242,237,228,0.6); }
+
+.welcome-footer {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+/* ============================================================
+   RULES SECTION
+============================================================ */
+#section-rules {
+  display: none;
+  flex-direction: row;
+}
+#section-rules.active { display: flex; }
+
+.rules-sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 0;
+  position: sticky;
+  top: 60px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+.rules-sidebar-section {
+  margin-bottom: 0.25rem;
+}
+.rules-sidebar-title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0.75rem 1.5rem 0.4rem;
+}
+.rules-sidebar button {
+  display: block; width: 100%;
+  background: none; border: none;
+  text-align: left;
+  padding: 0.5rem 1.5rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  transition: all var(--transition);
+  border-left: 2px solid transparent;
+  line-height: 1.4;
+}
+.rules-sidebar button:hover { color: var(--text); background: var(--bg-dark); }
+.rules-sidebar button.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: var(--bg);
+  font-weight: 500;
+}
+
+.rules-content {
+  flex: 1;
+  padding: 3rem 4rem;
+  max-width: 760px;
+  overflow-y: auto;
+}
+.rules-content h1 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.rules-content h2 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+.rules-content h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-mid);
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+.rules-content h4 {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-top: 1.5rem;
+  margin-bottom: 0.4rem;
+}
+.rules-content p {
+  line-height: 1.8;
+  color: var(--text-mid);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+.rules-content ul, .rules-content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+.rules-content li {
+  line-height: 1.7;
+  color: var(--text-mid);
+  margin-bottom: 0.3rem;
+  font-size: 0.95rem;
+}
+.rules-content strong { color: var(--text); }
+.rules-content em { color: var(--text-mid); }
+.rules-content code {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  background: var(--bg-dark);
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+  color: var(--accent);
+}
+.rules-content pre {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--text-mid);
+}
+.rules-content pre code { background: none; padding: 0; color: inherit; }
+.rules-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.25rem 0;
+  font-size: 0.875rem;
+}
+.rules-content th {
+  background: var(--bg-dark);
+  text-align: left;
+  padding: 0.6rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+.rules-content td {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+.rules-content tr:last-child td { border-bottom: none; }
+.rules-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 0.75rem 1.25rem;
+  margin: 1.25rem 0;
+  background: var(--surface-warm);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-style: italic;
+  color: var(--text-mid);
+}
+.rules-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+.rules-nav-footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 1rem; flex-wrap: wrap;
+}
+.rules-next-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.65rem 1.25rem;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--text-mid);
+  transition: all var(--transition);
+}
+.rules-next-btn:hover { border-color: var(--accent); color: var(--accent); }
+.rules-next-btn.primary {
+  background: var(--text); color: var(--bg); border-color: var(--text);
+}
+.rules-next-btn.primary:hover { background: var(--accent); border-color: var(--accent); }
+
+/* Glossary term highlights within rules */
+.term-link {
+  border-bottom: 1px dotted var(--accent);
+  color: var(--text);
+  cursor: help;
+  position: relative;
+}
+.term-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%; transform: translateX(-50%);
+  background: var(--text);
+  color: var(--bg);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-style: normal;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+  white-space: nowrap;
+  max-width: 280px;
+  white-space: normal;
+  width: max-content;
+  max-width: 260px;
+  line-height: 1.5;
+  z-index: 200;
+  box-shadow: 0 4px 16px var(--shadow-strong);
+}
+.term-link:hover .term-tooltip { display: block; }
+
+/* ============================================================
+   CARDS SECTION
+============================================================ */
+#section-cards {
+  display: none;
+  flex-direction: column;
+  padding: 2rem;
+  gap: 1.5rem;
+}
+#section-cards.active { display: flex; }
+
+.cards-header {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+}
+.cards-header h1 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 300;
+  flex: 1;
+}
+.cards-sub-nav {
+  display: flex; gap: 0;
+  background: var(--bg-dark);
+  border-radius: var(--radius);
+  padding: 3px;
+}
+.cards-sub-nav button {
+  background: none; border: none;
+  padding: 0.45rem 1.1rem;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  border-radius: calc(var(--radius) - 2px);
+  transition: all var(--transition);
+}
+.cards-sub-nav button.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 4px var(--shadow);
+}
+
+/* Filters bar */
+.cards-filters {
+  display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;
+}
+.filter-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-right: 0.25rem;
+}
+.filter-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 0.3rem 0.85rem;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  color: var(--text-mid);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.filter-chip:hover, .filter-chip.active {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+.filter-chip[data-type="Creator"].active   { background: var(--c-creator); border-color: var(--c-creator); }
+.filter-chip[data-type="Model"].active     { background: var(--c-model); border-color: var(--c-model); }
+.filter-chip[data-type="Prompt"].active    { background: var(--c-prompt); border-color: var(--c-prompt); }
+.filter-chip[data-type="Modifier"].active  { background: var(--c-modifier); border-color: var(--c-modifier); }
+.filter-chip[data-type="Artifact"].active  { background: var(--c-artifact); border-color: var(--c-artifact); }
+.filter-chip[data-type="Event"].active     { background: var(--c-event); border-color: var(--c-event); }
+.filter-search {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.9rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color var(--transition);
+  min-width: 180px;
+  margin-left: auto;
+}
+.filter-search:focus { border-color: var(--accent); }
+.filter-search::placeholder { color: var(--text-muted); }
+
+/* Cards grid */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.25rem;
+}
+
+/* Mini card */
+.mini-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition);
+  transform-style: preserve-3d;
+  will-change: transform;
+  position: relative;
+}
+.mini-card:hover {
+  box-shadow: 0 12px 40px var(--shadow-strong);
+  z-index: 10;
+}
+.card-shine {
+  position: absolute; inset: 0;
+  border-radius: var(--radius-lg);
+  pointer-events: none;
+  z-index: 5;
+  transition: background 0.08s;
+}
+
+.card-type-bar {
+  height: 5px;
+}
+.type-Creator  { background: var(--c-creator); }
+.type-Model    { background: var(--c-model); }
+.type-Prompt   { background: var(--c-prompt); }
+.type-Modifier { background: var(--c-modifier); }
+.type-Artifact { background: var(--c-artifact); }
+.type-Event    { background: var(--c-event); }
+
+.card-art-mini {
+  height: 100px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-style: italic;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 0.5rem;
+  line-height: 1.4;
+  position: relative;
+  overflow: hidden;
+}
+/* Art mood backgrounds */
+.mood-iridescent { background: linear-gradient(135deg, #e8d5f0 0%, #d5e8f0 50%, #f0ead5 100%); }
+.mood-chaotic    { background: linear-gradient(135deg, #f0d5d5 0%, #d5d5f0 50%, #d5f0d5 100%); }
+.mood-precise    { background: linear-gradient(135deg, #d5e8f5 0%, #e5edf5 100%); }
+.mood-bold       { background: linear-gradient(135deg, #f0dfd5 0%, #f5e8d5 100%); }
+.mood-neutral    { background: linear-gradient(135deg, #e8e8e8 0%, #f0f0f0 100%); }
+.mood-grainy     { background: linear-gradient(135deg, #ddd5c5 0%, #c5c0b5 100%); }
+.mood-epic       { background: linear-gradient(135deg, #f0e5d0 0%, #e0c8a0 100%); }
+.mood-generic    { background: linear-gradient(135deg, #f5e5e5 0%, #f0d5d5 100%); }
+.mood-layered    { background: linear-gradient(135deg, #e8f0d8 0%, #d8e8e0 100%); }
+.mood-guilty     { background: linear-gradient(135deg, #f0e8d5 0%, #e8dcc5 100%); }
+.mood-intense    { background: linear-gradient(135deg, #f5e0d0 0%, #f0c8b0 100%); }
+.mood-absurd     { background: linear-gradient(135deg, #e8f0e0 0%, #f0e8d0 100%); }
+.mood-ironic     { background: linear-gradient(135deg, #e8e0f0 0%, #f0e8e0 100%); }
+.mood-pastoral   { background: linear-gradient(135deg, #d8e8d0 0%, #e8f0d5 100%); }
+.mood-surreal    { background: linear-gradient(135deg, #e0d5f0 0%, #f0d5e0 100%); }
+.mood-isolated   { background: linear-gradient(135deg, #d0d8e8 0%, #e8e0d0 100%); }
+.mood-bright     { background: linear-gradient(135deg, #f5e8c8 0%, #f8f0d8 100%); }
+.mood-painterly  { background: linear-gradient(135deg, #e0d8c8 0%, #d8c8b8 100%); }
+.mood-hyperreal  { background: linear-gradient(135deg, #e8ede8 0%, #d5ddd5 100%); }
+.mood-rising     { background: linear-gradient(135deg, #f0e8c0 0%, #f8f0d0 100%); }
+.mood-severe     { background: linear-gradient(135deg, #f0d5d5 0%, #e8c8c8 100%); }
+.mood-premium    { background: linear-gradient(135deg, #f5e8c0 0%, #f0d888 100%); }
+.mood-spotlight  { background: linear-gradient(135deg, #f8f0d0 0%, #e8d888 80%, #f8f0d0 100%); }
+.mood-urgent     { background: linear-gradient(135deg, #d8e8f5 0%, #c8d8f0 100%); }
+.mood-corrupted  { background: linear-gradient(135deg, #c8c8c8 0%, #b8b0a8 100%); }
+.mood-frozen     { background: linear-gradient(135deg, #d5e5f0 0%, #c8d8e8 100%); }
+.mood-confused   { background: linear-gradient(135deg, #f0e0d5 0%, #e8d0c5 100%); }
+.mood-celebratory{ background: linear-gradient(135deg, #f5e0a8 0%, #f8e888 100%); }
+.mood-catastrophic{background: linear-gradient(135deg, #f0c8c8 0%, #e8b0b0 100%); }
+.mood-collective { background: linear-gradient(135deg, #d5e0f0 0%, #c8d5e8 100%); }
+.mood-sneaky     { background: linear-gradient(135deg, #d5d5e8 0%, #c8c8d8 100%); }
+.mood-efficient  { background: linear-gradient(135deg, #d5e8d5 0%, #c8d8c8 100%); }
+.mood-energetic  { background: linear-gradient(135deg, #f0e8c0 0%, #e8d888 100%); }
+.mood-disruptive { background: linear-gradient(135deg, #f0d5d0 0%, #e8c0b8 100%); }
+.mood-warm       { background: linear-gradient(135deg, #f5e8d0 0%, #f0d8b8 100%); }
+.mood-abrupt     { background: linear-gradient(135deg, #e0e8e8 0%, #d0d8d8 100%); }
+.mood-competitive{ background: linear-gradient(135deg, #e8e0d5 0%, #d8d0c5 100%); }
+
+.card-body { padding: 0.75rem; }
+.card-id {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  margin-bottom: 0.2rem;
+}
+.card-name {
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+  margin-bottom: 0.35rem;
+}
+.card-meta-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-subtype {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+.rarity-dots { display: flex; gap: 2px; align-items: center; }
+.rarity-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+}
+.rarity-1 .rarity-dot { background: var(--r-common); }
+.rarity-2 .rarity-dot { background: var(--r-uncommon); }
+.rarity-3 .rarity-dot { background: var(--r-rare); }
+.rarity-5 .rarity-dot { background: var(--r-mythic); }
+
+.card-stats-mini {
+  margin-top: 0.5rem;
+  display: flex; gap: 0.5rem; flex-wrap: wrap;
+}
+.stat-chip {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 0.15rem 0.35rem;
+  color: var(--text-muted);
+}
+.stat-chip.cost { color: var(--accent); border-color: var(--accent); }
+.stat-chip.loyalty { color: #8B3A3A; }
+.stat-chip.quality { color: #2C5F7A; }
+
+/* ============================================================
+   CARD MODAL
+============================================================ */
+.modal-backdrop {
+  display: none;
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(28,21,14,0.6);
+  backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+  padding: 2rem;
+}
+.modal-backdrop.open { display: flex; }
+
+.card-modal {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 80px rgba(0,0,0,0.4);
+  width: 100%; max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+  position: relative;
+}
+.modal-close {
+  position: absolute; top: 1rem; right: 1rem;
+  background: var(--bg-dark);
+  border: none;
+  border-radius: 50%;
+  width: 36px; height: 36px;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+  z-index: 10;
+}
+.modal-close:hover { background: var(--text); color: var(--bg); }
+
+.modal-card-inner {
+  display: flex; gap: 0;
+}
+.modal-card-visual {
+  width: 260px;
+  min-width: 260px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.modal-card-art {
+  flex: 1;
+  min-height: 200px;
+  display: flex;
+  align-items: center; justify-content: center;
+  padding: 1.5rem;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.6;
+}
+.modal-card-footer-strip {
+  border-top: 1px solid var(--border);
+  padding: 0.75rem 1rem;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.modal-card-setinfo {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  flex: 1;
+}
+
+.modal-card-info {
+  flex: 1;
+  padding: 1.75rem 2rem;
+  overflow-y: auto;
+}
+.modal-type-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+.modal-card-name {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 300;
+  color: var(--text);
+  line-height: 1.1;
+  margin-bottom: 0.25rem;
+}
+.modal-card-subtype {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.modal-stats-bar {
+  display: flex; gap: 0.6rem; flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.modal-stat {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.85rem;
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 60px;
+}
+.modal-stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.modal-stat-value {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text);
+  margin-top: 0.1rem;
+}
+
+.modal-section-title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 1.5rem;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border-light);
+}
+.ability-block {
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.65rem;
+}
+.ability-block.signature {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--bg) 0%, rgba(184,132,42,0.05) 100%);
+}
+.ability-header {
+  display: flex; align-items: baseline; gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+.ability-num {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-dark);
+  border-radius: 50%;
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ability-block.signature .ability-num {
+  background: var(--accent);
+  color: white;
+  font-size: 0.8rem;
+}
+.ability-name {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.ability-cost {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+.ability-cost .cost-loyalty { color: #8B3A3A; }
+.ability-cost .cost-rep { color: var(--accent); }
+.ability-text {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--text-mid);
+}
+
+.compat-row {
+  display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;
+}
+.compat-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+}
+.compat-tag.compatible   { color: var(--c-prompt); border-color: var(--c-prompt); background: rgba(74,114,85,0.08); }
+.compat-tag.incompatible { color: #8B3A3A; border-color: #8B3A3A; background: rgba(139,58,58,0.08); }
+
+.deck-badge {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 0.2rem 0.65rem;
+  color: var(--text-muted);
+  margin-right: 0.4rem;
+}
+.deck-badge.in-deck { color: var(--accent); border-color: var(--accent-light); }
+
+/* ============================================================
+   DECKS SECTION
+============================================================ */
+#section-decks {
+  display: none;
+  padding: 2rem;
+  gap: 2rem;
+}
+#section-decks.active { display: flex; flex-direction: column; }
+
+.decks-header {
+  display: flex; align-items: center; gap: 1rem;
+}
+.decks-header h1 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 300;
+  flex: 1;
+}
+.btn-new-deck {
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.6rem 1.3rem;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  transition: background var(--transition);
+}
+.btn-new-deck:hover { background: var(--accent); }
+
+.decks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+.deck-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex; flex-direction: column; gap: 0.75rem;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+.deck-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 6px 24px var(--shadow);
+}
+.deck-card-header {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+}
+.deck-card-icon {
+  width: 42px; height: 42px;
+  background: var(--bg-dark);
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+.deck-card-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.deck-card-subtitle {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--text-muted);
+}
+.deck-card-desc {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--text-mid);
+  line-height: 1.65;
+}
+.deck-card-tags {
+  display: flex; gap: 0.4rem; flex-wrap: wrap;
+}
+.deck-tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 100px;
+  padding: 0.2rem 0.65rem;
+  color: var(--text-muted);
+}
+.deck-card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-light);
+}
+.deck-card-count {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.deck-actions { display: flex; gap: 0.4rem; }
+.deck-action-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.3rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  transition: all var(--transition);
+}
+.deck-action-btn:hover { border-color: var(--accent); color: var(--accent); }
+.deck-action-btn.danger:hover { border-color: #A03030; color: #A03030; }
+
+/* Deck detail view */
+.deck-detail {
+  display: none;
+  flex-direction: column; gap: 1.5rem;
+}
+.deck-detail.active { display: flex; }
+.deck-detail-header {
+  display: flex; align-items: center; gap: 1rem;
+}
+.btn-back {
+  background: none; border: none;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.btn-back:hover { color: var(--accent); }
+
+/* Deck composer */
+.deck-composer {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.5rem;
+}
+.deck-composer-cards { grid-column: 1; }
+.deck-composer-sidebar {
+  grid-column: 2;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  position: sticky; top: 76px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.composer-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.deck-slot-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 0.82rem;
+}
+.deck-slot-item:last-child { border-bottom: none; }
+.slot-count {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  width: 20px;
+}
+.slot-name {
+  font-family: var(--font-body);
+  color: var(--text-mid);
+  flex: 1;
+}
+.slot-remove {
+  background: none; border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  transition: all var(--transition);
+}
+.slot-remove:hover { color: #A03030; background: rgba(160,48,48,0.1); }
+.deck-validation {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+.deck-validation.valid { background: rgba(74,114,85,0.1); color: var(--c-prompt); border: 1px solid rgba(74,114,85,0.3); }
+.deck-validation.invalid { background: rgba(139,58,58,0.1); color: var(--c-creator); border: 1px solid rgba(139,58,58,0.3); }
+
+/* ============================================================
+   PLAY SECTION
+============================================================ */
+#section-play {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 60px);
+  padding: 3rem 2rem;
+  gap: 2.5rem;
+}
+#section-play.active { display: flex; }
+.play-title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 300;
+  text-align: center;
+  color: var(--text);
+}
+.play-coming-soon {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 3rem;
+  max-width: 560px;
+  text-align: center;
+  display: flex; flex-direction: column; gap: 1rem;
+  box-shadow: 0 4px 20px var(--shadow);
+}
+.play-coming-soon h2 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.play-coming-soon p {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+.play-phase-list {
+  list-style: none;
+  display: flex; flex-direction: column; gap: 0.5rem;
+  text-align: left;
+}
+.play-phase-item {
+  display: flex; align-items: center; gap: 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-mid);
+}
+.phase-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: var(--border);
+}
+.phase-dot.done { background: var(--c-prompt); }
+.phase-dot.active-phase { background: var(--accent); }
+
+/* ============================================================
+   FEEDBACK BUTTON (floating)
+============================================================ */
+.feedback-fab {
+  position: fixed; bottom: 1.5rem; right: 1.5rem;
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  border-radius: 100px;
+  padding: 0.7rem 1.4rem;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 20px var(--shadow-strong);
+  transition: all var(--transition);
+  z-index: 200;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.feedback-fab:hover {
+  background: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px var(--shadow-strong);
+}
+
+/* ============================================================
+   FEEDBACK MODAL
+============================================================ */
+.feedback-modal-inner {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 80px rgba(0,0,0,0.4);
+  width: 100%; max-width: 500px;
+  padding: 2rem;
+  display: flex; flex-direction: column; gap: 1.25rem;
+  position: relative;
+}
+.feedback-modal-inner h2 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 300;
+  color: var(--text);
+}
+.feedback-options {
+  display: flex; flex-direction: column; gap: 0.75rem;
+}
+.feedback-option {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  text-align: left;
+  transition: all var(--transition);
+  display: flex; flex-direction: column; gap: 0.2rem;
+}
+.feedback-option:hover { border-color: var(--accent); }
+.feedback-option strong {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.feedback-option span {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   LOADING STATES
+============================================================ */
+.loading-spinner {
+  display: flex; align-items: center; justify-content: center;
+  padding: 4rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+.loading-spinner::after {
+  content: '';
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-left: 0.75rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   SCROLLBAR
+============================================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 700px) {
+  .rules-sidebar { width: 200px; min-width: 200px; }
+  .rules-content { padding: 2rem 1.5rem; }
+  .modal-card-inner { flex-direction: column; }
+  .modal-card-visual { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid var(--border); }
+  header { padding: 0 1rem; }
+  .header-logo { font-size: 0.9rem; }
+  nav button { padding: 0 0.9rem; font-size: 0.8rem; }
+  .deck-composer { grid-template-columns: 1fr; }
+  .deck-composer-sidebar { position: static; max-height: unset; }
+}
+</style>
 </head>
-<body class="min-h-screen overflow-x-hidden selection:bg-purple-900 selection:text-white">
+<body>
 
-  <div id="app" class="relative min-h-screen flex flex-col" v-cloak>
-    
-    <!-- HEADER -->
-    <header class="border-b border-purple-950/60 bg-black/40 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center space-x-3 cursor-pointer" @click="currentScreen = 'welcome'">
-        <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-purple-600 to-amber-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
-          <span class="fancy-title font-extrabold text-white text-lg">NC</span>
-        </div>
-        <div>
-          <h1 class="fancy-title text-base font-extrabold tracking-wider bg-gradient-to-r from-amber-200 to-purple-400 bg-clip-text text-transparent">NIGHTCAFE</h1>
-          <p class="text-[10px] text-purple-400 font-semibold tracking-widest uppercase">The Card Game • Beta</p>
-        </div>
+<!-- ============================================================
+  AUTH SCREEN
+============================================================ -->
+<div id="auth-screen">
+  <div class="auth-logo">NightCafe Creator</div>
+  <h1 class="auth-title">The Card Game<br><em style="font-style:italic;font-weight:300">First Render</em></h1>
+  <p class="auth-subtitle">Set 001 · Beta Access</p>
+  <div class="auth-box">
+    <label for="auth-input">Beta Access Code</label>
+    <input type="text" id="auth-input" placeholder="FIRSTRENDER-000" autocomplete="off" spellcheck="false">
+    <p class="auth-error" id="auth-error">Invalid code. Check your beta invite.</p>
+    <button class="btn-primary" id="auth-submit">Enter Beta →</button>
+  </div>
+  <p class="auth-note">Access codes are distributed privately by @aia</p>
+</div>
+
+<!-- ============================================================
+  MAIN APP
+============================================================ -->
+<div id="app">
+  <header>
+    <div class="header-logo">NightCafe <span>TCG</span></div>
+    <nav>
+      <button data-section="welcome" class="active">Home</button>
+      <button data-section="rules">Info</button>
+      <button data-section="cards">Cards</button>
+      <button data-section="decks">Decks</button>
+      <button data-section="play">Play ⚡</button>
+    </nav>
+    <div class="header-actions">
+      <button class="btn-outline" id="btn-open-feedback">Feedback</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- WELCOME -->
+    <section id="section-welcome" class="section active">
+      <div class="welcome-header">
+        <p class="welcome-set-label">Set 001 · First Render · Beta v0.14</p>
+        <h1 class="welcome-title">NightCafe:<br><em>The Card Game</em></h1>
+        <p class="welcome-subtitle">Quick Duel Edition · Beta Release</p>
       </div>
 
-      <!-- Navigation & Status -->
-      <div class="flex items-center space-x-6">
-        <nav class="hidden md:flex items-center space-x-1" v-if="authenticatedUser">
-          <button @click="currentScreen = 'welcome'" :class="buttonClass('welcome')">Home</button>
-          <button @click="currentScreen = 'play'" :class="buttonClass('play')">Play Duel</button>
-          <button @click="currentScreen = 'index'" :class="buttonClass('index')">Card Index & Decks</button>
-          <button @click="currentScreen = 'info'" :class="buttonClass('info')">Rules & Guides</button>
-          <button @click="currentScreen = 'vote'" :class="buttonClass('vote')">A/B Voting</button>
-        </nav>
-
-        <div class="flex items-center space-x-3">
-          <!-- Connection Status -->
-          <span class="flex h-2.5 w-2.5 relative">
-            <span :class="['animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', supabaseConnected ? 'bg-emerald-400' : 'bg-amber-400']"></span>
-            <span :class="['relative inline-flex rounded-full h-2.5 w-2.5', supabaseConnected ? 'bg-emerald-500' : 'bg-amber-500']"></span>
-          </span>
-          <span class="text-xs text-slate-400 hidden sm:inline">{{ supabaseConnected ? 'Supabase Live' : 'Sandbox Mode' }}</span>
-
-          <div v-if="authenticatedUser" class="flex items-center space-x-3 pl-3 border-l border-slate-800">
-            <span class="text-xs font-semibold px-2 py-1 bg-purple-950/50 border border-purple-800/40 rounded text-purple-300">
-              <i class="lucide-user inline-block w-3 h-3 mr-1"></i>{{ authenticatedUser }}
-            </span>
-            <button @click="logout" class="text-xs text-red-400 hover:text-red-300 transition">Logout</button>
-          </div>
-        </div>
+      <div class="welcome-message" id="welcome-message-box">
+        <p><em>Hello, and thank you.</em></p>
+        <p><em>You are holding one of the very first copies of NightCafe: The Card Game to exist anywhere in the world. You are not just a player — you are part of building something from the ground up.</em></p>
+        <p><em>This is Set 001 — First Render. The first set of NightCafe: The Card Game. Two starter decks, forty cards each, one complete experience.</em></p>
+        <h2>What I need from you</h2>
+        <ul>
+          <li>Play it. Tell me what feels wrong. Tell me what feels right. Be honest.</li>
+          <li>Focus on the Reputation economy and the 20-cap</li>
+          <li>Test the SD1.5 destruction mechanic — clever or confusing?</li>
+          <li>Try CLIP-LOCK — rewarding or tedious?</li>
+          <li>Push for Going Viral — satisfying climax or hard to set up?</li>
+          <li>Check the draw rate — enough cards each turn?</li>
+          <li>See Document 7 (Flagged Items) for the full list</li>
+        </ul>
+        <h2>A few things to know</h2>
+        <ul>
+          <li>Rules v0.14. Things will change.</li>
+          <li>FAQ and Absolute Rules take priority over card text.</li>
+          <li>Some mechanics (Evolution, Legacy Models, Gallery War) are not available in this set.</li>
+        </ul>
+        <p style="margin-top:1.5rem;font-size:0.8rem;text-align:right;color:var(--text-muted)"><em>— @aia · NightCafe: The Card Game — First Render (Set 001)</em></p>
       </div>
-    </header>
 
-    <!-- MAIN INTERACTIVE SECTION -->
-    <main class="flex-grow flex flex-col relative">
-
-      <!-- ================= SCREEN 1: SECURE LOGIN ================= -->
-      <section v-if="!authenticatedUser" class="flex-grow flex items-center justify-center px-4 py-12">
-        <div class="w-full max-w-md bg-slate-950/80 border border-purple-900/40 p-8 rounded-2xl shadow-2xl shadow-purple-950/20 backdrop-blur-lg">
-          <div class="text-center mb-8">
-            <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 flex items-center justify-center shadow-lg shadow-purple-500/20 mb-4">
-              <i class="lucide-shield-check text-white w-8 h-8"></i>
-            </div>
-            <h2 class="fancy-title text-2xl font-bold tracking-wide text-white">BETA ACCESS RESTRICTED</h2>
-            <p class="text-xs text-purple-400 mt-2 uppercase tracking-widest">Enter Credentials to Unlock Set 001</p>
-          </div>
-
-          <form @submit.prevent="handleLogin" class="space-y-5">
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Username</label>
-              <div class="relative">
-                <i class="lucide-user absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-500 w-4 h-4"></i>
-                <input type="text" v-model="loginForm.username" required class="w-full bg-slate-900/60 border border-slate-800 focus:border-purple-500 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition" placeholder="e.g., tester01">
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Security Key</label>
-              <div class="relative">
-                <i class="lucide-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-500 w-4 h-4"></i>
-                <input type="password" v-model="loginForm.password" required class="w-full bg-slate-900/60 border border-slate-800 focus:border-purple-500 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 transition" placeholder="••••••••">
-              </div>
-            </div>
-
-            <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl transition shadow-lg shadow-indigo-600/20 text-sm tracking-wide uppercase">
-              Authenticate
-            </button>
-          </form>
-
-          <div class="mt-6 text-center">
-            <p class="text-[11px] text-slate-500">Contact @aia on the NightCafe community channel to obtain your beta tester authentication details.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= SCREEN 2: WELCOME HUB ================= -->
-      <section v-if="authenticatedUser && currentScreen === 'welcome'" class="flex-grow max-w-6xl mx-auto w-full px-6 py-12 flex flex-col justify-center">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
-          <!-- Banner & Info -->
-          <div class="lg:col-span-7 space-y-6">
-            <div class="inline-flex items-center space-x-2 bg-purple-950/60 border border-purple-800/60 px-3 py-1.5 rounded-full text-xs text-purple-300">
-              <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
-              <span>BETA RELEASE V0.14 IN PROGRESS</span>
-            </div>
-            
-            <h1 class="fancy-title text-4xl sm:text-6xl font-extrabold leading-none text-white tracking-wide">
-              First Render<br>
-              <span class="bg-gradient-to-r from-amber-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">Set 001 Starter</span>
-            </h1>
-            
-            <p class="text-slate-300 leading-relaxed max-w-xl">
-              Welcome to the digital tabletop portal for **NightCafe: The Card Game**. Inspired by the NightCafe Creator artistic community, you play as an AI art generator competing to build visibility, earn reputation, manage Credits, and defend your Creator's Loyalty!
-            </p>
-
-            <div class="flex flex-wrap gap-4 pt-2">
-              <button @click="currentScreen = 'play'" class="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold rounded-xl transition shadow-lg shadow-orange-500/15 uppercase text-sm tracking-wider flex items-center">
-                Play Duel Now <i class="lucide-swords ml-2 w-4 h-4"></i>
-              </button>
-              <button @click="currentScreen = 'info'" class="px-6 py-4 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white font-bold rounded-xl transition text-sm tracking-wider uppercase flex items-center">
-                Tutorials & Rules <i class="lucide-book-open ml-2 w-4 h-4"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Quick Actions & Testers Info Box -->
-          <div class="lg:col-span-5 space-y-6">
-            <div class="bg-slate-950/80 border border-purple-900/40 p-6 rounded-2xl space-y-4 shadow-xl">
-              <h3 class="fancy-title text-lg font-bold text-amber-300 flex items-center">
-                <i class="lucide-message-square-plus mr-2 w-5 h-5"></i> Testers Questionnaire
-              </h3>
-              <p class="text-xs text-slate-400 leading-relaxed">
-                Your direct inputs make this game balanced and highly competitive. Share thoughts on:
-              </p>
-              <ul class="text-xs text-slate-300 space-y-2 list-disc pl-4">
-                <li>Is <strong>SD1.5</strong> immediate self-destruction logical?</li>
-                <li>How does the 20-cap on <strong>Reputation</strong> economy feel?</li>
-                <li>Does <strong>Aia</strong> going first feel balanced?</li>
-              </ul>
-              <button @click="openFeedbackModal('general')" class="w-full mt-2 py-3 bg-purple-950 hover:bg-purple-900 text-purple-200 border border-purple-800/60 font-semibold rounded-lg text-xs tracking-wider uppercase transition">
-                Open Integrated Feedback Form
-              </button>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div @click="currentScreen = 'index'" class="bg-slate-900/60 hover:bg-slate-900/90 border border-slate-800 p-4 rounded-xl cursor-pointer transition flex items-center space-x-3">
-                <i class="lucide-layers text-amber-400 w-5 h-5"></i>
-                <div>
-                  <h4 class="font-bold text-xs text-white">Deck Builder</h4>
-                  <p class="text-[10px] text-slate-400 mt-1">Manage & customize</p>
-                </div>
-              </div>
-              <div @click="currentScreen = 'vote'" class="bg-slate-900/60 hover:bg-slate-900/90 border border-slate-800 p-4 rounded-xl cursor-pointer transition flex items-center space-x-3">
-                <i class="lucide-vote text-purple-400 w-5 h-5"></i>
-                <div>
-                  <h4 class="font-bold text-xs text-white">A/B Card Art</h4>
-                  <p class="text-[10px] text-slate-400 mt-1">Vote on designs</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- ================= SCREEN 3: RULES & TUTORIALS ================= -->
-      <section v-if="authenticatedUser && currentScreen === 'info'" class="flex-grow max-w-7xl mx-auto w-full px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <!-- Document Navigator Sidebar -->
-        <div class="lg:col-span-3 space-y-2 bg-slate-950/40 p-4 rounded-xl border border-slate-900 self-start">
-          <h3 class="fancy-title text-xs font-bold text-slate-400 px-3 pb-3 uppercase tracking-wider border-b border-slate-900">Game Manuals</h3>
-          <button v-for="doc in documents" :key="doc.id" @click="activeDocId = doc.id" 
-                  :class="['w-full text-left px-3 py-2.5 rounded-lg text-xs font-semibold transition flex items-center space-x-2', activeDocId === doc.id ? 'bg-gradient-to-r from-purple-950 to-indigo-950 text-purple-200 border-l-4 border-purple-500' : 'text-slate-400 hover:bg-slate-900/80 hover:text-white']">
-            <i :class="['w-4 h-4', activeDocId === doc.id ? 'text-purple-400' : 'text-slate-500']"></i>
-            <span class="truncate">{{ doc.title }}</span>
-          </button>
-        </div>
-
-        <!-- Document Viewer Content Area -->
-        <div class="lg:col-span-9 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-6 sm:p-10 shadow-xl overflow-y-auto max-h-[75vh]">
-          <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
-            <div>
-              <span class="text-[10px] text-amber-400 font-extrabold uppercase tracking-widest">Document {{ activeDocId.toUpperCase() }}</span>
-              <h2 class="fancy-title text-2xl font-bold text-white mt-1">{{ getActiveDoc.title }}</h2>
-            </div>
-            <button @click="currentScreen = 'welcome'" class="text-xs text-slate-400 hover:text-white flex items-center space-x-1">
-              <span>Back home</span> <i class="lucide-arrow-right w-3.5 h-3.5"></i>
-            </button>
-          </div>
-
-          <!-- Dynamic Markdown Renderer (HTML Mockup) -->
-          <div class="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed space-y-4">
-            <div v-html="renderMarkdown(getActiveDoc.content)"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= SCREEN 4: CARD INDEX & DECK BUILDER ================= -->
-      <section v-if="authenticatedUser && currentScreen === 'index'" class="flex-grow max-w-7xl mx-auto w-full px-6 py-8 flex flex-col space-y-6">
-        
-        <!-- Selector Tab (Gallery vs Custom Deck Builder) -->
-        <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-4 gap-4">
-          <div class="flex space-x-2 bg-slate-950 p-1.5 rounded-xl border border-slate-900">
-            <button @click="indexSubTab = 'gallery'" :class="['px-4 py-2 rounded-lg text-xs font-bold uppercase transition', indexSubTab === 'gallery' ? 'bg-purple-900 text-white' : 'text-slate-400 hover:text-slate-200']">
-              Card Reference Gallery
-            </button>
-            <button @click="indexSubTab = 'deckbuilder'" :class="['px-4 py-2 rounded-lg text-xs font-bold uppercase transition', indexSubTab === 'deckbuilder' ? 'bg-purple-900 text-white' : 'text-slate-400 hover:text-slate-200']">
-              Custom Deck Builder
-            </button>
-          </div>
-
-          <div v-if="indexSubTab === 'gallery'" class="flex items-center space-x-3">
-            <label class="text-xs text-slate-400 font-semibold">Filter Type:</label>
-            <select v-model="cardFilter" class="bg-slate-900 border border-slate-800 text-xs text-white rounded-lg px-3 py-1.5 focus:outline-none focus:border-purple-500">
-              <option value="ALL">All Cards</option>
-              <option value="CREATORS">Creators</option>
-              <option value="MODELS">Models</option>
-              <option value="PROMPTS">Prompts</option>
-              <option value="MODIFIERS">Modifiers</option>
-              <option value="ARTIFACTS">Artifacts</option>
-              <option value="EVENTS">Events</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- SUB TAB: GALLERY -->
-        <div v-if="indexSubTab === 'gallery'" class="grid grid-cols-1 md:grid-cols-12 gap-8 flex-grow">
-          
-          <!-- Grid of Cards -->
-          <div class="md:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-4 overflow-y-auto max-h-[70vh] pr-2">
-            <div v-for="card in filteredCards" :key="card.code" 
-                 @click="viewCardDetails(card)"
-                 class="group relative bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800/80 hover:border-amber-500/40 p-4 rounded-xl cursor-pointer transition shadow-lg flex flex-col justify-between h-64 overflow-hidden">
-              
-              <!-- Subtle Background Art Mock -->
-              <div class="absolute inset-0 bg-gradient-to-tr from-purple-950/20 to-indigo-950/10 opacity-30 group-hover:opacity-50 transition"></div>
-              
-              <div class="relative z-10 flex flex-col h-full justify-between">
-                <div>
-                  <div class="flex items-center justify-between text-[10px] font-bold tracking-widest text-slate-500">
-                    <span>{{ card.code }}</span>
-                    <span :class="rarityColor(card.rarity)">{{ card.rarity }}</span>
-                  </div>
-                  <h3 class="font-bold text-sm text-white group-hover:text-amber-300 transition mt-1.5 line-clamp-1">{{ card.name }}</h3>
-                  <span class="inline-block mt-1 text-[9px] px-2 py-0.5 bg-slate-800 rounded font-bold uppercase tracking-wider text-slate-300 border border-slate-700/50">
-                    {{ card.type }}
-                  </span>
-                </div>
-
-                <!-- Central graphic mock -->
-                <div class="my-2 h-20 rounded-lg bg-black/40 border border-slate-800/40 flex items-center justify-center relative overflow-hidden">
-                  <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-purple-900/20 to-slate-900/20"></div>
-                  <span class="text-xs text-slate-600 font-semibold uppercase tracking-widest">ARTWORK</span>
-                </div>
-
-                <div class="flex items-center justify-between text-xs font-semibold text-slate-400">
-                  <span v-if="card.credits || card.cost" class="text-amber-400">
-                    <i class="lucide-coins inline-block w-3 h-3 mr-1"></i>{{ card.credits || card.cost }}
-                  </span>
-                  <span v-if="card.loyalty" class="text-rose-500">
-                    <i class="lucide-heart inline-block w-3.5 h-3.5 mr-1"></i>{{ card.loyalty }}
-                  </span>
-                  <span v-if="card.quality" class="text-emerald-400">
-                    <i class="lucide-star inline-block w-3.5 h-3.5 mr-1"></i>Q:{{ card.quality }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card Spotlight & Irregular Regions Detector -->
-          <div class="md:col-span-4 bg-slate-950/50 border border-slate-800/60 rounded-2xl p-6 self-start space-y-6">
-            <h3 class="fancy-title text-sm font-bold tracking-widest text-slate-400 uppercase border-b border-slate-900 pb-3">Card Spotlight</h3>
-
-            <div v-if="spotlightCard" class="space-y-6">
-              <!-- Interactive 3D Mockup Container -->
-              <div class="card-3d-wrap flex justify-center">
-                <div class="card-3d relative w-64 h-96 rounded-2xl bg-gradient-to-b from-slate-900 via-slate-950 to-black border-2 border-slate-800/60 p-5 flex flex-col justify-between shadow-2xl shadow-purple-950/30 overflow-hidden"
-                     @mousemove="handleCardTilt" @mouseleave="resetCardTilt" ref="tiltCard">
-                  
-                  <!-- Abstract Glowing Gradient Backdrop representing "NightCafe art generation" -->
-                  <div class="absolute -top-10 -left-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                  <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-                  <!-- Irregular Hotspots SVG Glow Overlays -->
-                  <svg v-if="spotlightCard.type === 'Creator'" class="card-overlay" viewBox="0 0 256 384">
-                    <!-- Custom Irregular Poly Map Glows -->
-                    <polygon id="glow-ability-1" points="15,220 240,210 240,260 15,270" class="ability-glow" :class="{'active-hover': activeRegionGlow === 'ability-1'}" />
-                    <polygon id="glow-ability-2" points="15,275 240,265 240,315 15,325" class="ability-glow" :class="{'active-hover': activeRegionGlow === 'ability-2'}" />
-                    <polygon id="glow-ability-sig" points="15,330 240,320 240,370 15,375" class="ability-glow" :class="{'active-hover': activeRegionGlow === 'ability-sig'}" />
-                  </svg>
-
-                  <!-- Card Meta Info -->
-                  <div class="relative z-10 flex flex-col justify-between h-full">
-                    <div class="flex items-center justify-between text-[10px] font-bold text-slate-500 tracking-wider">
-                      <span>{{ spotlightCard.code }}</span>
-                      <span :class="rarityColor(spotlightCard.rarity)">{{ spotlightCard.rarity }}</span>
-                    </div>
-
-                    <!-- Title & Style Tag -->
-                    <div class="mt-2">
-                      <h2 class="fancy-title text-base font-extrabold text-white leading-tight tracking-wider">{{ spotlightCard.name }}</h2>
-                      <span class="inline-block mt-1 text-[8px] px-2 py-0.5 bg-slate-900 rounded border border-slate-800 text-slate-400 font-extrabold tracking-widest uppercase">
-                        {{ spotlightCard.type }}
-                      </span>
-                    </div>
-
-                    <!-- Central Simulated Art Screen -->
-                    <div class="relative my-3 h-28 rounded-xl bg-black/60 border border-slate-800/50 flex flex-col items-center justify-center p-3 text-center overflow-hidden">
-                      <div class="absolute inset-0 bg-radial-gradient from-indigo-950/40 via-transparent to-transparent"></div>
-                      <i class="lucide-image text-slate-700 w-8 h-8 mb-1.5"></i>
-                      <p class="text-[10px] font-semibold text-slate-500 max-w-[80%] italic">"{{ spotlightCard.desc || 'No preview art' }}"</p>
-                    </div>
-
-                    <!-- Static stats / descriptors block -->
-                    <div class="text-[11px] text-slate-400 leading-snug space-y-1">
-                      <p v-if="spotlightCard.loyalty"><strong class="text-rose-500">Loyalty:</strong> {{ spotlightCard.loyalty }}</p>
-                      <p v-if="spotlightCard.quality"><strong class="text-emerald-500">Quality:</strong> {{ spotlightCard.quality }}</p>
-                      <p v-if="spotlightCard.credits"><strong class="text-amber-500">Activation/Cost:</strong> {{ spotlightCard.credits }} Credits</p>
-                    </div>
-
-                    <!-- Interactive Region Mappings indicators (Hover to see where they are!) -->
-                    <div v-if="spotlightCard.type === 'Creator'" class="mt-3 pt-2 border-t border-slate-900 flex justify-around text-[9px] text-amber-500 font-bold uppercase tracking-wider">
-                      <span class="cursor-pointer hover:text-white" @mouseenter="activeRegionGlow = 'ability-1'" @mouseleave="activeRegionGlow = null">Ability 1</span>
-                      <span class="cursor-pointer hover:text-white" @mouseenter="activeRegionGlow = 'ability-2'" @mouseleave="activeRegionGlow = null">Ability 2</span>
-                      <span class="cursor-pointer hover:text-white" @mouseenter="activeRegionGlow = 'ability-sig'" @mouseleave="activeRegionGlow = null">Signature</span>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-
-              <!-- Extra Technical Cross References and Add To Custom Deck -->
-              <div class="space-y-4 pt-4 border-t border-slate-900">
-                <div>
-                  <h4 class="text-xs font-bold text-slate-300">Description & Rules text:</h4>
-                  <div class="text-xs text-slate-400 mt-1.5 leading-relaxed bg-slate-950 p-3.5 rounded-xl border border-slate-900" v-html="highlightGlossaryTerms(spotlightCard.text || spotlightCard.desc)"></div>
-                </div>
-
-                <!-- Actions inside card view -->
-                <div class="flex space-x-2">
-                  <button @click="addCardToActiveDeck(spotlightCard)" class="flex-grow py-2.5 bg-purple-950 hover:bg-purple-900 text-purple-200 border border-purple-800/60 font-semibold rounded-lg text-xs tracking-wider uppercase transition">
-                    Add to Deck
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div v-else class="text-center py-12 text-slate-600">
-              <i class="lucide-layout-grid w-8 h-8 mx-auto mb-2 opacity-50"></i>
-              <p class="text-xs">Select a card from the reference grid to view visual interactive breakdown and detailed cross references.</p>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- SUB TAB: DECK BUILDER -->
-        <div v-if="indexSubTab === 'deckbuilder'" class="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-grow">
-          
-          <!-- Left side: Deck Managers & Prebuilts -->
-          <div class="lg:col-span-4 space-y-6">
-            <!-- Decks List -->
-            <div class="bg-slate-950/40 border border-slate-900 p-5 rounded-2xl space-y-4">
-              <div class="flex justify-between items-center border-b border-slate-900 pb-3">
-                <h3 class="fancy-title text-sm font-bold text-slate-300">Your Decks</h3>
-                <button @click="createNewCustomDeck" class="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center">
-                  <i class="lucide-plus w-3.5 h-3.5 mr-1"></i> New Deck
-                </button>
-              </div>
-
-              <div class="space-y-2.5 max-h-[40vh] overflow-y-auto">
-                <div v-for="deck in decks" :key="deck.id" 
-                     @click="selectDeck(deck)"
-                     :class="['p-3 rounded-xl border cursor-pointer transition flex items-center justify-between', selectedDeckId === deck.id ? 'bg-purple-950/30 border-purple-500' : 'bg-slate-900/40 border-slate-800/60 hover:bg-slate-900/80']">
-                  <div class="space-y-1">
-                    <span class="text-xs font-bold text-white block">{{ deck.name }}</span>
-                    <span class="text-[10px] text-slate-400 block">{{ countCardsInDeck(deck) }} / 40 Cards</span>
-                  </div>
-                  <div class="flex space-x-2">
-                    <button @click.stop="duplicateDeck(deck)" title="Duplicate" class="p-1.5 bg-slate-950 rounded hover:bg-slate-900 text-slate-400 hover:text-white transition">
-                      <i class="lucide-copy w-3.5 h-3.5"></i>
-                    </button>
-                    <button v-if="!deck.isPrebuilt" @click.stop="deleteDeck(deck)" title="Delete" class="p-1.5 bg-red-950 rounded hover:bg-red-900 text-red-400 hover:text-red-300 transition">
-                      <i class="lucide-trash w-3.5 h-3.5"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Share Deck Panel -->
-            <div v-if="activeDeck && !activeDeck.isPrebuilt" class="bg-slate-950/40 border border-slate-900 p-5 rounded-2xl space-y-3">
-              <h4 class="font-bold text-xs text-amber-400 uppercase tracking-wider flex items-center">
-                <i class="lucide-share-2 mr-2 w-4 h-4"></i> Share Deck With Creators
-              </h4>
-              <p class="text-[11px] text-slate-400 leading-relaxed">
-                Do you think you built the ultimate control or aggro list? Submit your configuration to the creators to review.
-              </p>
-              <button @click="shareCustomDeck" class="w-full py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 text-slate-950 font-extrabold rounded-lg text-xs tracking-wider uppercase transition">
-                Submit Deck Configuration
-              </button>
-            </div>
-          </div>
-
-          <!-- Right side: Active Deck Editor -->
-          <div class="lg:col-span-8 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between">
-            <div v-if="activeDeck" class="space-y-6">
-              <div class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-900 pb-4">
-                <div>
-                  <input v-if="!activeDeck.isPrebuilt" type="text" v-model="activeDeck.name" class="bg-slate-900 border border-slate-800 text-sm font-bold text-white rounded px-3 py-1.5 focus:outline-none focus:border-purple-500">
-                  <h3 v-else class="text-sm font-bold text-white">{{ activeDeck.name }}</h3>
-                  <p class="text-[10px] text-slate-400 mt-1">Creator: {{ activeDeck.creatorCode }} • Models: {{ activeDeck.guaranteedModels.join(', ') }}</p>
-                </div>
-
-                <!-- Validation indicators badge -->
-                <div class="flex space-x-2">
-                  <span :class="['px-2.5 py-1 text-[10px] font-bold rounded-lg border uppercase tracking-wider', isDeckValid(activeDeck) ? 'bg-emerald-950/50 border-emerald-800 text-emerald-400' : 'bg-red-950/50 border-red-800 text-red-400']">
-                    {{ isDeckValid(activeDeck) ? 'Valid Deck' : 'Invalid Composition' }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- Deck Composition Rules Info Grid -->
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold text-slate-400">
-                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900">
-                  <span class="block text-[9px] text-slate-500 uppercase tracking-widest">Total Cards</span>
-                  <span class="text-white font-extrabold text-sm">{{ countCardsInDeck(activeDeck) }} / 40</span>
-                </div>
-                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900">
-                  <span class="block text-[9px] text-slate-500 uppercase tracking-widest">Creator</span>
-                  <span class="text-white font-extrabold text-sm">{{ activeDeck.creatorCode ? 1 : 0 }} / 1</span>
-                </div>
-                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900">
-                  <span class="block text-[9px] text-slate-500 uppercase tracking-widest">Guaranteed Models</span>
-                  <span class="text-white font-extrabold text-sm">{{ activeDeck.guaranteedModels.length }} / 2</span>
-                </div>
-                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900">
-                  <span class="block text-[9px] text-slate-500 uppercase tracking-widest">Shuffled Pile</span>
-                  <span class="text-white font-extrabold text-sm">{{ countShuffledDeck(activeDeck) }} / 37</span>
-                </div>
-              </div>
-
-              <!-- Cards in Deck Grid list -->
-              <div class="space-y-3">
-                <h4 class="text-xs font-bold text-slate-300">Shuffled Deck Pile:</h4>
-                <div v-if="Object.keys(activeDeck.shuffledCards).length === 0" class="text-center py-8 text-slate-600 bg-slate-950 rounded-xl border border-slate-900/50">
-                  <i class="lucide-inbox w-8 h-8 mx-auto mb-1.5 opacity-40"></i>
-                  <p class="text-xs">No cards added to the shuffled pile yet.</p>
-                </div>
-                
-                <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[35vh] overflow-y-auto pr-1">
-                  <div v-for="(qty, code) in activeDeck.shuffledCards" :key="code" class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex items-center justify-between">
-                    <div>
-                      <span class="text-[10px] text-slate-500 font-bold block leading-none mb-1">{{ code }}</span>
-                      <span class="text-xs font-bold text-white">{{ getCardByCode(code)?.name }}</span>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                      <button v-if="!activeDeck.isPrebuilt" @click="decreaseCardQty(activeDeck, code)" class="w-6 h-6 rounded bg-slate-950 text-slate-400 hover:text-white flex items-center justify-center">-</button>
-                      <span class="text-xs font-bold text-white px-2">{{ qty }}</span>
-                      <button v-if="!activeDeck.isPrebuilt" @click="increaseCardQty(activeDeck, code)" class="w-6 h-6 rounded bg-slate-950 text-slate-400 hover:text-white flex items-center justify-center">+</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-            <div v-else class="text-center py-20 text-slate-600">
-              <i class="lucide-book-open w-12 h-12 mx-auto mb-3 opacity-40"></i>
-              <p class="text-sm">Select or create a deck structure on the left side menu to edit and audit composition parameters.</p>
-            </div>
-          </div>
-
-        </div>
-
-      </section>
-
-      <!-- ================= SCREEN 5: A/B TESTING CARD DESIGN ================= -->
-      <section v-if="authenticatedUser && currentScreen === 'vote'" class="flex-grow max-w-5xl mx-auto w-full px-6 py-12 flex flex-col justify-center space-y-8">
-        <div class="text-center max-w-xl mx-auto space-y-3">
-          <span class="text-[10px] text-purple-400 font-extrabold uppercase tracking-widest bg-purple-950/50 border border-purple-800/40 px-3 py-1 rounded-full">Community Art Survey</span>
-          <h2 class="fancy-title text-3xl font-bold text-white">Compare Design Options</h2>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            We are considering different card layout paradigms for Set 001. Please review these two simulated wireframes below and cast your vote dynamically.
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          
-          <!-- Design A -->
-          <div @click="voteForDesign('A')" class="group relative bg-gradient-to-b from-slate-900 to-slate-950 border-2 hover:border-amber-500 border-slate-800 rounded-2xl p-6 cursor-pointer transition shadow-xl space-y-4">
-            <span class="absolute top-4 right-4 text-xs font-bold bg-slate-800 text-slate-300 px-2 py-1 rounded">Layout A: Classic border</span>
-            
-            <div class="h-80 w-56 mx-auto rounded-xl border border-slate-800 bg-black flex flex-col justify-between p-4 shadow-lg shadow-purple-950/20 relative overflow-hidden">
-              <div class="absolute inset-x-0 top-0 h-2/3 bg-gradient-to-b from-slate-900 to-transparent"></div>
-              <span class="text-[10px] text-slate-500 font-bold block">P-001 • Artist</span>
-              <h4 class="font-extrabold text-sm text-white mb-2 leading-none">GOOD OLD GREG</h4>
-              <div class="my-auto h-28 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-800/50 text-xs text-slate-500">Artwork Area</div>
-              <p class="text-[10px] text-slate-400 italic">"by Greg Rutkowski"</p>
-              <div class="text-[9px] text-amber-400 font-semibold border-t border-slate-900 pt-2 flex justify-between">
-                <span>Assigns Fantasy tag.</span>
-                <span>Cost: 1</span>
-              </div>
-            </div>
-
-            <div class="text-center pt-2">
-              <span class="inline-block px-4 py-2 bg-slate-950 text-xs font-bold text-slate-300 rounded-lg group-hover:bg-amber-500 group-hover:text-slate-950 transition">
-                Select Layout A
-              </span>
-            </div>
-          </div>
-
-          <!-- Design B -->
-          <div @click="voteForDesign('B')" class="group relative bg-gradient-to-b from-slate-900 to-slate-950 border-2 hover:border-amber-500 border-slate-800 rounded-2xl p-6 cursor-pointer transition shadow-xl space-y-4">
-            <span class="absolute top-4 right-4 text-xs font-bold bg-slate-800 text-slate-300 px-2 py-1 rounded">Layout B: Full bleed / Clean text</span>
-
-            <div class="h-80 w-56 mx-auto rounded-xl border border-slate-800 bg-slate-900 flex flex-col justify-end p-4 shadow-lg shadow-purple-950/20 relative overflow-hidden">
-              <div class="absolute inset-0 bg-gradient-to-b from-purple-950/10 via-black/40 to-black/90"></div>
-              <div class="relative z-10 space-y-2">
-                <span class="text-[9px] text-amber-400 font-extrabold uppercase">P-001 • Prompt</span>
-                <h4 class="font-extrabold text-sm text-white leading-none">GOOD OLD GREG</h4>
-                <p class="text-[10px] text-slate-300 italic">"by Greg Rutkowski"</p>
-                <div class="text-[9px] text-slate-400 leading-normal border-t border-slate-800 pt-2">
-                  Assigns Fantasy tag. If already Fantasy, +1 Quality instead.
-                </div>
-              </div>
-            </div>
-
-            <div class="text-center pt-2">
-              <span class="inline-block px-4 py-2 bg-slate-950 text-xs font-bold text-slate-300 rounded-lg group-hover:bg-amber-500 group-hover:text-slate-950 transition">
-                Select Layout B
-              </span>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- ================= SCREEN 6: PLAY SANDBOX (1V1 SOLE / MATCH) ================= -->
-      <section v-if="authenticatedUser && currentScreen === 'play'" class="flex-grow flex flex-col">
-        <!-- Interactive Playboard Top Bar -->
-        <div class="bg-slate-950/80 border-b border-slate-900 px-6 py-3 flex flex-wrap items-center justify-between gap-4">
-          <div class="flex items-center space-x-4">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Quick Duel Sandbox Table</span>
-            <div class="flex space-x-1.5">
-              <button @click="resetLocalGame" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold rounded text-[10px] border border-slate-800 uppercase transition">
-                Reset Board
-              </button>
-            </div>
-          </div>
-
-          <!-- Standard Game status parameters indicators -->
-          <div class="flex items-center space-x-6 text-xs font-semibold">
-            <div class="flex items-center space-x-1">
-              <span class="text-slate-500">Current Turn:</span>
-              <span class="text-amber-400">Round {{ gameState.round }} • Turn {{ gameState.turnPlayer === 1 ? 'Player 1' : 'Player 2' }}</span>
-            </div>
-            <div class="flex items-center space-x-3">
-              <button @click="passTurn" class="px-4 py-1.5 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white font-extrabold rounded-lg text-[10px] uppercase tracking-wider transition">
-                Pass Turn <i class="lucide-chevrons-right inline-block w-3 h-3 ml-1"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- The Interactive Battlefield Tabletop -->
-        <div class="flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
-          
-          <!-- Left side column: Player 1 (Bottom of table) & Player 2 (Top of table) stats and zones -->
-          <div class="lg:col-span-8 space-y-6 flex flex-col justify-between">
-            
-            <!-- OPPONENT FIELD AREA (Player 2) -->
-            <div class="bg-slate-950/40 border border-slate-900/60 rounded-2xl p-5 relative space-y-4">
-              <div class="flex items-center justify-between border-b border-slate-900/80 pb-2">
-                <div class="flex items-center space-x-3">
-                  <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                  <h4 class="font-extrabold text-xs text-white">Player 2: Anonymous User (Horde Deck)</h4>
-                </div>
-                <div class="flex items-center space-x-4 text-xs font-bold">
-                  <span class="text-rose-500"><i class="lucide-heart inline-block w-3 h-3 mr-1"></i>Loyalty: {{ gameState.p2.loyalty }}</span>
-                  <span class="text-amber-400"><i class="lucide-coins inline-block w-3 h-3 mr-1"></i>Credits: {{ gameState.p2.credits }}</span>
-                  <span class="text-purple-400"><i class="lucide-award inline-block w-3 h-3 mr-1"></i>Rep: {{ gameState.p2.reputation }}</span>
-                </div>
-              </div>
-
-              <!-- Played Creation Slots -->
-              <div class="grid grid-cols-3 gap-4">
-                <div v-for="slot in gameState.p2.field" :key="slot.id" 
-                     class="p-3 bg-slate-900/50 border border-slate-800 rounded-xl relative h-32 flex flex-col justify-between overflow-hidden">
-                  <div class="flex justify-between items-center text-[9px] text-slate-500">
-                    <span>Slot {{ slot.id }}</span>
-                    <span v-if="slot.clipLocked" class="text-amber-400">CLIP-LOCKED</span>
-                  </div>
-                  <div v-if="slot.card" class="space-y-1">
-                    <span class="text-xs font-bold text-white block">{{ slot.card.name }}</span>
-                    <span class="text-[9px] text-slate-400 block">Q:{{ slot.card.quality }} • V:{{ slot.visibility }}</span>
-                  </div>
-                  <div v-else class="text-center my-auto">
-                    <span class="text-[10px] text-slate-600 block uppercase">Empty Slot</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- PLAYER 1 ACTIVE BATTLE ZONE (Local Player) -->
-            <div class="bg-slate-950/40 border border-purple-900/30 rounded-2xl p-5 relative space-y-4">
-              <div class="flex items-center justify-between border-b border-slate-900/80 pb-2">
-                <div class="flex items-center space-x-3">
-                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                  <h4 class="font-extrabold text-xs text-white">Player 1: Aia (CLIP Resistance Deck)</h4>
-                </div>
-                <div class="flex items-center space-x-4 text-xs font-bold">
-                  <span class="text-rose-500"><i class="lucide-heart inline-block w-3 h-3 mr-1"></i>Loyalty: {{ gameState.p1.loyalty }}</span>
-                  <span class="text-amber-400"><i class="lucide-coins inline-block w-3 h-3 mr-1"></i>Credits: {{ gameState.p1.credits }}</span>
-                  <span class="text-purple-400"><i class="lucide-award inline-block w-3 h-3 mr-1"></i>Rep: {{ gameState.p1.reputation }}</span>
-                </div>
-              </div>
-
-              <!-- Played Creation Slots -->
-              <div class="grid grid-cols-3 gap-4">
-                <div v-for="slot in gameState.p1.field" :key="slot.id" 
-                     @click="interactWithSlot(slot, 1)"
-                     class="p-3 bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 rounded-xl relative h-32 flex flex-col justify-between cursor-pointer transition overflow-hidden">
-                  <div class="flex justify-between items-center text-[9px] text-slate-500">
-                    <span>Slot {{ slot.id }}</span>
-                    <span v-if="slot.clipLocked" class="text-amber-400">CLIP-LOCKED</span>
-                  </div>
-                  <div v-if="slot.card" class="space-y-1">
-                    <span class="text-xs font-bold text-white block">{{ slot.card.name }}</span>
-                    <span class="text-[9px] text-slate-400 block">Q:{{ slot.card.quality }} • V:{{ slot.visibility }}</span>
-                  </div>
-                  <div v-else class="text-center my-auto">
-                    <span class="text-[10px] text-slate-600 block uppercase">Empty Slot</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- ACTION SELECTOR & IN-HAND CARDS CONTROLLER -->
-            <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-4">
-              <h5 class="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-900 pb-2">Action Controller</h5>
-              
-              <div class="flex flex-wrap gap-3">
-                <button @click="triggerSimulatedAction('activateModel')" class="px-4 py-2 bg-purple-950 text-purple-200 border border-purple-800/50 rounded-lg text-xs font-bold uppercase transition">
-                  Activate Model (Cost: varies)
-                </button>
-                <button @click="triggerSimulatedAction('applyClipLock')" class="px-4 py-2 bg-slate-900 text-slate-300 border border-slate-800 rounded-lg text-xs font-bold uppercase transition">
-                  Apply CLIP-LOCK (Aia Passive)
-                </button>
-                <button @click="triggerSimulatedAction('remix')" class="px-4 py-2 bg-slate-900 text-slate-300 border border-slate-800 rounded-lg text-xs font-bold uppercase transition">
-                  Remix Creation
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Right side column: Game Log, Active Modifiers & Resolution triggers -->
-          <div class="lg:col-span-4 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-5 flex flex-col justify-between">
-            <div class="space-y-4 flex-grow">
-              <h4 class="fancy-title text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-900 pb-3">Activity & Duel Log</h4>
-              
-              <div class="bg-black/40 border border-slate-900 rounded-xl p-4 h-80 overflow-y-auto space-y-2.5 text-xs text-slate-400 code-font">
-                <div v-for="(log, idx) in gameLogs" :key="idx" class="leading-relaxed border-b border-slate-900/30 pb-1">
-                  <span class="text-purple-400 font-bold">[{{ log.time }}]</span> {{ log.msg }}
-                </div>
-              </div>
-            </div>
-
-            <div class="pt-4 border-t border-slate-900 space-y-3 mt-4">
-              <button @click="resolveMatchSimulated(1)" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-extrabold rounded-lg text-xs tracking-wider uppercase transition">
-                Simulate Victory: Player 1
-              </button>
-              <button @click="resolveMatchSimulated(2)" class="w-full py-3 bg-slate-900 text-slate-400 hover:text-white border border-slate-800 font-bold rounded-lg text-xs tracking-wider uppercase transition">
-                Simulate Victory: Player 2
-              </button>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-    </main>
-
-    <!-- FLOATING INTEGRATED FEEDBACK PANEL -->
-    <div v-if="feedbackFormOpen" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div class="w-full max-w-lg bg-slate-950 border border-purple-900/40 p-6 rounded-2xl shadow-2xl relative space-y-5">
-        
-        <button @click="feedbackFormOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
-          <i class="lucide-x w-6 h-6"></i>
+      <div class="welcome-nav">
+        <button class="welcome-nav-btn" onclick="navigateTo('rules','tutorial1a')">
+          <span class="wnb-icon">📖</span>
+          <span class="wnb-label">Start Tutorial</span>
+          <span class="wnb-sub">New to the game?</span>
         </button>
+        <button class="welcome-nav-btn primary" onclick="navigateTo('play')">
+          <span class="wnb-icon">⚡</span>
+          <span class="wnb-label">Play</span>
+          <span class="wnb-sub">Find a game</span>
+        </button>
+        <button class="welcome-nav-btn" onclick="navigateTo('cards')">
+          <span class="wnb-icon">🃏</span>
+          <span class="wnb-label">Card Index</span>
+          <span class="wnb-sub">Browse all 42 cards</span>
+        </button>
+        <button class="welcome-nav-btn" onclick="navigateTo('decks')">
+          <span class="wnb-icon">📦</span>
+          <span class="wnb-label">Decks</span>
+          <span class="wnb-sub">Build &amp; browse</span>
+        </button>
+      </div>
 
-        <div class="text-center space-y-2">
-          <h3 class="fancy-title text-xl font-bold text-white uppercase tracking-wider">Beta Feedback Terminal</h3>
-          <p class="text-xs text-slate-400">Your inputs route directly into the active development files.</p>
+      <p class="welcome-footer">NightCafe: The Card Game · First Render (Set 001) · Rules v0.14 · Beta · Illustration by @aia</p>
+    </section>
+
+    <!-- RULES -->
+    <section id="section-rules" class="section">
+      <aside class="rules-sidebar" id="rules-sidebar">
+        <div class="rules-sidebar-section">
+          <div class="rules-sidebar-title">Getting Started</div>
+          <button data-doc="betatester" onclick="loadDoc('betatester')">Beta Tester Message</button>
+          <button data-doc="tutorial1a" onclick="loadDoc('tutorial1a')">Tutorial 1A — Horde Deck</button>
+          <button data-doc="tutorial1b" onclick="loadDoc('tutorial1b')">Tutorial 1B — CLIP Deck</button>
         </div>
+        <div class="rules-sidebar-section">
+          <div class="rules-sidebar-title">Rules</div>
+          <button data-doc="rulebook" onclick="loadDoc('rulebook')">Full Rulebook</button>
+          <button data-doc="quickref" onclick="loadDoc('quickref')">Quick Reference</button>
+          <button data-doc="faq" onclick="loadDoc('faq')">FAQ</button>
+        </div>
+        <div class="rules-sidebar-section">
+          <div class="rules-sidebar-title">Cards & Decks</div>
+          <button data-doc="cardindex" onclick="loadDoc('cardindex')">Card Index</button>
+          <button data-doc="deckguide" onclick="loadDoc('deckguide')">Deck Builder's Guide</button>
+        </div>
+        <div class="rules-sidebar-section">
+          <div class="rules-sidebar-title">Beta</div>
+          <button data-doc="flagged" onclick="loadDoc('flagged')">Flagged Items</button>
+        </div>
+      </aside>
+      <div class="rules-content" id="rules-content">
+        <div class="loading-spinner">Loading document</div>
+      </div>
+    </section>
 
-        <form @submit.prevent="submitIntegratedFeedback" class="space-y-4">
-          <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Feedback Category</label>
-            <select v-model="feedbackData.category" required class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-purple-500">
-              <option value="General">General Opinion / Suggestion</option>
-              <option value="Bug">Technical Bug Report</option>
-              <option value="Balance">Mechanics & Balance Balance</option>
-            </select>
-          </div>
+    <!-- CARDS -->
+    <section id="section-cards" class="section">
+      <div class="cards-header">
+        <h1>Card Index</h1>
+        <div class="cards-sub-nav">
+          <button class="active" id="btn-gallery-view" onclick="setCardsView('gallery')">Gallery</button>
+          <button id="btn-list-view" onclick="setCardsView('list')">By Deck</button>
+        </div>
+      </div>
 
-          <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Detailed Description</label>
-            <textarea v-model="feedbackData.description" required rows="5" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-white focus:outline-none focus:border-purple-500 placeholder-slate-600" placeholder="Please elaborate here. Detail specific cards or rules if possible..."></textarea>
-          </div>
+      <div class="cards-filters" id="cards-filters">
+        <span class="filter-label">Type</span>
+        <button class="filter-chip active" data-type="all" onclick="filterCards('all', this)">All</button>
+        <button class="filter-chip" data-type="Creator"  onclick="filterCards('Creator', this)">Creator</button>
+        <button class="filter-chip" data-type="Model"    onclick="filterCards('Model', this)">Model</button>
+        <button class="filter-chip" data-type="Prompt"   onclick="filterCards('Prompt', this)">Prompt</button>
+        <button class="filter-chip" data-type="Modifier" onclick="filterCards('Modifier', this)">Modifier</button>
+        <button class="filter-chip" data-type="Artifact" onclick="filterCards('Artifact', this)">Artifact</button>
+        <button class="filter-chip" data-type="Event"    onclick="filterCards('Event', this)">Event</button>
+        <input type="search" class="filter-search" id="cards-search" placeholder="Search cards…" oninput="searchCards(this.value)">
+      </div>
 
-          <button type="submit" class="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold rounded-lg text-xs tracking-wider uppercase transition shadow-lg shadow-indigo-600/10">
-            Submit Feedback Log
+      <div class="cards-grid" id="cards-grid">
+        <div class="loading-spinner">Loading cards</div>
+      </div>
+    </section>
+
+    <!-- DECKS -->
+    <section id="section-decks" class="section">
+      <div class="decks-header">
+        <h1>Decks</h1>
+        <button class="btn-new-deck" onclick="createNewDeck()">+ New Deck</button>
+      </div>
+      <div id="decks-list-view">
+        <div class="decks-grid" id="decks-grid">
+          <div class="loading-spinner">Loading decks</div>
+        </div>
+      </div>
+      <div id="deck-detail-view" class="deck-detail">
+        <!-- Deck detail rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- PLAY -->
+    <section id="section-play" class="section">
+      <h1 class="play-title">Play — Online Duel</h1>
+      <div class="play-coming-soon">
+        <h2>Multiplayer coming soon</h2>
+        <p>The game engine is being built. Check back for updates — or browse cards and build decks while you wait.</p>
+        <ul class="play-phase-list">
+          <li class="play-phase-item"><span class="phase-dot done"></span> Rules documents &amp; card data</li>
+          <li class="play-phase-item"><span class="phase-dot done"></span> Card gallery with 3D view</li>
+          <li class="play-phase-item"><span class="phase-dot done"></span> Deck builder (localStorage)</li>
+          <li class="play-phase-item"><span class="phase-dot active-phase"></span> P2P connection (PeerJS)</li>
+          <li class="play-phase-item"><span class="phase-dot"></span> Game state engine</li>
+          <li class="play-phase-item"><span class="phase-dot"></span> All card abilities</li>
+          <li class="play-phase-item"><span class="phase-dot"></span> Beta launch</li>
+        </ul>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem">
+          For now, use the rules and cards sections to get familiar with the game.
+        </p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Card Detail Modal -->
+<div class="modal-backdrop" id="card-modal-backdrop" onclick="closeCardModal(event)">
+  <div class="card-modal" id="card-modal">
+    <button class="modal-close" onclick="closeCardModal()">✕</button>
+    <div class="modal-card-inner" id="modal-card-inner">
+      <!-- Rendered dynamically -->
+    </div>
+  </div>
+</div>
+
+<!-- Feedback Modal -->
+<div class="modal-backdrop" id="feedback-modal" onclick="closeFeedbackModal(event)">
+  <div class="feedback-modal-inner">
+    <button class="modal-close" onclick="closeFeedbackModal()">✕</button>
+    <h2>Feedback</h2>
+    <p style="font-family:var(--font-body);font-size:0.85rem;color:var(--text-muted)">
+      Choose the type of feedback you'd like to send:
+    </p>
+    <div class="feedback-options">
+      <button class="feedback-option" onclick="openFeedbackForm('general')">
+        <strong>Bug Report / General Feedback</strong>
+        <span>Report issues, share opinions, suggest changes</span>
+      </button>
+      <button class="feedback-option" onclick="openFeedbackForm('design')">
+        <strong>Card Design Vote</strong>
+        <span>Vote between two card design options</span>
+      </button>
+      <button class="feedback-option" onclick="openFeedbackForm('deck')">
+        <strong>Share a Deck Idea</strong>
+        <span>Submit a custom deck for @aia to review</span>
+      </button>
+    </div>
+    <p style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);text-align:center">
+      Game data is automatically collected at the end of each duel.
+    </p>
+  </div>
+</div>
+
+<!-- Floating Feedback Button -->
+<button class="feedback-fab" id="btn-open-feedback-fab" onclick="openFeedbackModal()">
+  ✉ Feedback
+</button>
+
+<script>
+// ============================================================
+// CONFIG — Fill in your Google Form IDs before launch
+// ============================================================
+const CONFIG = {
+  // Beta access tokens — distribute one per tester
+  BETA_TOKENS: [
+    "FIRSTRENDER-DEV",      // dev access
+    "FIRSTRENDER-001",
+    "FIRSTRENDER-002",
+    "FIRSTRENDER-003",
+    "FIRSTRENDER-004",
+    "FIRSTRENDER-005",
+    // Add more as needed
+  ],
+
+  // Google Forms — fill these in after creating your forms
+  FORMS: {
+    GENERAL_FEEDBACK: "https://docs.google.com/forms/d/e/1FAIpQLSdbdBcywYmLC5tkK2vnDonQUjvvjPCG50rBCu16EjIKmrH1aA/viewform",
+    CARD_DESIGN_VOTE: "https://docs.google.com/forms/d/e/1FAIpQLSd_jzQ5tj0_732HaEmdUswDrLnycPODK7VdMTlSZ0XWf5ZnQw/viewform",
+    DECK_SHARE:       "https://docs.google.com/forms/d/e/1FAIpQLSc7B0mNiZLXz8TMenlmgRJUBom-IiXiBEW_WNCQS6K5Kp1OFQ/viewform",
+    GAME_DATA:        "https://docs.google.com/forms/d/e/1FAIpQLSdY66PR5uZDtF5wQPcjH_iBhfBs0iTEBDbJROx99EDcXRymdA/formResponse",
+  },
+
+  // Google Forms field IDs (get from URL when pre-filling)
+  FORM_FIELDS: {
+    GAME_DATA: {
+      winner:    "entry.461987758",
+      loser:     "entry.1532166155",
+      turns:     "entry.986542292",
+      winReason: "entry.862861704",
+    }
+  }
+};
+
+// ============================================================
+// GLOSSARY — Terms for cross-referencing in card/rules text
+// ============================================================
+const GLOSSARY = {
+  "CLIP-LOCK": "A protective state applied manually to Coherent Creations once per turn. Blocks opponent Glitch tokens and single-target abilities. Cannot be applied while in Remix Queue.",
+  "Glitch token": "Reduces a Creation's Quality by 1. Quality reaching 0 = immediate destruction → Creator loses 1 Loyalty.",
+  "Quality": "A Creation's power level (1–5+). Affects Reputation generation. Quality 0 = immediate destruction.",
+  "Visibility Counter": "Tracks a Creation's public exposure. 0–2: Unnoticed (0 Rep). 3–5: Noticed (1 Rep). 6–9: Liked (2 Rep). 10+: Featured (3 Rep + burst).",
+  "Loyalty": "A Creator's health. Reaches 0 → eliminated immediately. No maximum.",
+  "Reputation": "Currency used to pay for most Creator abilities. Capped at 20. Earned from Creations based on their Visibility.",
+  "Credits": "Main resource. Capped at 10 (13 with PRO). Gained each turn. Used to play cards and activate Models.",
+  "Runtime": "Turns a Creation waits in the Queue before entering the field. Reduces by 1 each turn.",
+  "Queue": "Where Creations wait before entering the field. Max 2 per player (not counting Remix Queue).",
+  "Remix Queue": "Holds 1 Creation per player while being Remixed. Cannot be destroyed here. Immunities ignored.",
+  "Style tag": "Labels a Creation's content type: Fantasy, Landscape, Portrait, Abstract, or Atmosphere. Compatible = +1 Quality. Incompatible = +1 Glitch token.",
+  "Creator Stress": "If you end your turn (Turn 2+) with no Creations on field or in Queue, your Creator loses 1 Loyalty.",
+  "LoRA": "A Modifier that attaches permanently to a Model, enhancing certain Creation types. Max 1 per Model in Quick Duel. Adds +1 Credit to activation cost.",
+  "Slot Overflow": "When a Creation arrives and all 3 Creation Slots are full, you must destroy an existing Creation (−1 Loyalty) or lose the incoming one.",
+  "Contention": "Activating a Model for the 2nd time in a round (across both players) adds +1 Runtime to the resulting Creation.",
+  "Featured": "A Creation with 10+ Visibility. Generates 3 Reputation/turn. First time reaching 10: +5 Reputation burst (once per Creation).",
+  "Liked": "A Creation with 6–9 Visibility. Generates 2 Reputation/turn.",
+  "Noticed": "A Creation with 3–5 Visibility. Generates 1 Reputation/turn.",
+  "Main Phase": "The second phase of your turn. Where most actions happen: playing cards, activating Models, using abilities.",
+  "Refresh Phase": "The first phase of your turn. Gain Credits, reduce Runtime, enter Creations, gain Visibility, collect Reputation.",
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let allCards = [];
+let allDecks = { prebuilt: [], buildRules: {} };
+let activeFilter = 'all';
+let searchQuery = '';
+let currentDoc = null;
+let deckEditingId = null;
+
+// ============================================================
+// AUTH
+// ============================================================
+function initAuth() {
+  const saved = localStorage.getItem('nc_beta_token');
+  if (saved && CONFIG.BETA_TOKENS.includes(saved)) {
+    showApp();
+    return;
+  }
+
+  const screen = document.getElementById('auth-screen');
+  const input  = document.getElementById('auth-input');
+  const btn    = document.getElementById('auth-submit');
+  const err    = document.getElementById('auth-error');
+
+  screen.classList.remove('hidden');
+
+  function tryAuth() {
+    const val = input.value.trim().toUpperCase();
+    if (CONFIG.BETA_TOKENS.includes(val)) {
+      localStorage.setItem('nc_beta_token', val);
+      screen.classList.add('hidden');
+      showApp();
+    } else {
+      err.classList.add('visible');
+      input.focus();
+      input.select();
+    }
+  }
+
+  btn.addEventListener('click', tryAuth);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') tryAuth(); });
+}
+
+function showApp() {
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  loadData();
+}
+
+// ============================================================
+// DATA LOADING
+// ============================================================
+async function loadData() {
+  try {
+    const [cardsResp, decksResp] = await Promise.all([
+      fetch('./data/cards.json'),
+      fetch('./data/decks.json')
+    ]);
+    const cardsData = await cardsResp.json();
+    const decksData = await decksResp.json();
+    allCards = cardsData.cards;
+    allDecks = decksData;
+    renderCardsGrid(allCards);
+    renderDecksGrid();
+  } catch(e) {
+    console.error('Failed to load data:', e);
+    document.getElementById('cards-grid').innerHTML =
+      '<p style="padding:2rem;color:var(--text-muted)">Failed to load card data. Make sure you\'re running from a local server or GitHub Pages.</p>';
+  }
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function navigateTo(section, docId) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+
+  const sectionEl = document.getElementById(`section-${section}`);
+  const navBtn    = document.querySelector(`nav button[data-section="${section}"]`);
+
+  if (sectionEl) sectionEl.classList.add('active');
+  if (navBtn)    navBtn.classList.add('active');
+
+  if (section === 'rules') {
+    loadDoc(docId || 'tutorial1a');
+  }
+}
+
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => navigateTo(btn.dataset.section));
+});
+
+// ============================================================
+// RULES DOCUMENT LOADER
+// ============================================================
+const DOC_MAP = {
+  betatester: 'betatestermessage.md',
+  tutorial1a: 'tutorial1a.md',
+  tutorial1b: 'tutorial1b.md',
+  rulebook:   'rulebook.md',
+  quickref:   'quickreferencesheet.md',
+  faq:        'faq.md',
+  cardindex:  'cardindex.md',
+  deckguide:  'deckbuildersguide.md',
+  flagged:    'flaggeditemsforbetatesting.md',
+};
+
+const DOC_NEXT = {
+  betatester: [{ label: 'Start Tutorial 1A →', doc: 'tutorial1a', primary: true }],
+  tutorial1a: [
+    { label: 'Continue to Tutorial 1B →', doc: 'tutorial1b', primary: true },
+    { label: 'Open Rulebook', doc: 'rulebook' },
+    { label: 'Browse Cards', action: () => navigateTo('cards') },
+    { label: 'FAQ', doc: 'faq' },
+    { label: 'Flagged Items', doc: 'flagged' },
+  ],
+  tutorial1b: [
+    { label: 'Full Rulebook', doc: 'rulebook', primary: true },
+    { label: 'Card Index', doc: 'cardindex' },
+    { label: 'Quick Reference', doc: 'quickref' },
+    { label: 'Deck Builder\'s Guide', doc: 'deckguide' },
+    { label: 'Flagged Items', doc: 'flagged' },
+  ],
+  rulebook: [
+    { label: 'Quick Reference →', doc: 'quickref', primary: true },
+    { label: 'FAQ', doc: 'faq' },
+  ],
+  quickref: [
+    { label: 'FAQ →', doc: 'faq', primary: true },
+  ],
+  faq: [
+    { label: 'Card Index →', doc: 'cardindex', primary: true },
+    { label: 'Flagged Items', doc: 'flagged' },
+  ],
+};
+
+let docCache = {};
+
+async function loadDoc(docKey) {
+  currentDoc = docKey;
+
+  // Update sidebar active state
+  document.querySelectorAll('.rules-sidebar button').forEach(b => {
+    b.classList.toggle('active', b.dataset.doc === docKey);
+  });
+
+  const contentEl = document.getElementById('rules-content');
+  contentEl.innerHTML = '<div class="loading-spinner">Loading document</div>';
+
+  try {
+    if (!docCache[docKey]) {
+      const filename = DOC_MAP[docKey];
+      if (!filename) throw new Error('Unknown doc: ' + docKey);
+      const resp = await fetch(`./docs/${filename}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      docCache[docKey] = await resp.text();
+    }
+
+    const rawHtml = marked.parse(docCache[docKey]);
+    const linkedHtml = linkGlossaryTerms(rawHtml);
+
+    // Build nav footer
+    const nextLinks = DOC_NEXT[docKey] || [];
+    const navFooter = nextLinks.length ? `
+      <div class="rules-nav-footer">
+        ${nextLinks.map(n => `
+          <button class="rules-next-btn ${n.primary ? 'primary' : ''}"
+            onclick="${n.action ? `(${n.action.toString()})()` : `loadDoc('${n.doc}')`}">
+            ${n.label}
           </button>
-        </form>
+        `).join('')}
+      </div>
+    ` : '';
 
+    contentEl.innerHTML = linkedHtml + navFooter;
+    contentEl.scrollTop = 0;
+  } catch(e) {
+    contentEl.innerHTML = `<p style="padding:2rem;color:var(--text-muted)">
+      Could not load document. ${e.message}<br>
+      <small>Make sure you're running from a local server (not file://).</small>
+    </p>`;
+  }
+}
+
+function linkGlossaryTerms(html) {
+  // Wrap glossary terms in tooltip spans — skip inside HTML tags
+  let result = html;
+  for (const [term, def] of Object.entries(GLOSSARY)) {
+    // Match whole word, case-sensitive, not inside tags
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    result = result.replace(
+      new RegExp(`(?<![<\\w-])(${escaped}s?)(?![\\w-])`, 'g'),
+      `<span class="term-link">$1<span class="term-tooltip">${def}</span></span>`
+    );
+  }
+  return result;
+}
+
+// ============================================================
+// CARD GALLERY
+// ============================================================
+function getTypeColor(type) {
+  const map = {
+    Creator: 'var(--c-creator)', Model: 'var(--c-model)', Prompt: 'var(--c-prompt)',
+    Modifier: 'var(--c-modifier)', Artifact: 'var(--c-artifact)', Event: 'var(--c-event)'
+  };
+  return map[type] || 'var(--text-muted)';
+}
+
+function getSubtypeDisplay(card) {
+  if (card.type === 'Model') return card.subtype;
+  if (card.type === 'Prompt') return `${card.subtype} · ${card.keyword}`;
+  if (card.type === 'Modifier') return card.subtype;
+  if (card.type === 'Artifact') return card.subtype;
+  if (card.type === 'Event') return `${card.subtype} · ${card.timing || ''}`;
+  if (card.type === 'Creator') return card.factions?.join(' / ') || '';
+  return card.subtype || '';
+}
+
+function renderRarityDots(n) {
+  const dots = Array(n).fill('<span class="rarity-dot"></span>').join('');
+  return `<div class="rarity-dots rarity-${n}">${dots}</div>`;
+}
+
+function getCardStats(card) {
+  const stats = [];
+  if (card.cost !== undefined && card.type !== 'Creator' && card.type !== 'Model') {
+    const label = (card.costType === 'reputation') ? `${card.cost} REP` : `${card.cost} CR`;
+    stats.push({ label, cls: 'cost' });
+  }
+  if (card.loyalty)      stats.push({ label: `${card.loyalty} LOY`, cls: 'loyalty' });
+  if (card.quality)      stats.push({ label: `Q${card.quality}`, cls: 'quality' });
+  if (card.runtime)      stats.push({ label: `RT${card.runtime}` });
+  if (card.playCost !== undefined) stats.push({ label: `P${card.playCost}`, cls: 'cost' });
+  if (card.activateCost !== undefined) stats.push({ label: `A${card.activateCost}` });
+  return stats;
+}
+
+function renderMiniCard(card) {
+  const typeClass = `type-${card.type}`;
+  const moodClass = `mood-${card.illustrationMood || 'neutral'}`;
+  const stats = getCardStats(card);
+
+  return `
+    <div class="mini-card" onclick="openCardModal('${card.id}')" data-type="${card.type}" data-name="${card.name.toLowerCase()}" data-id="${card.id}">
+      <div class="card-shine"></div>
+      <div class="card-type-bar ${typeClass}"></div>
+      <div class="card-art-mini ${moodClass}">
+        <em>${card.illustration || ''}</em>
+      </div>
+      <div class="card-body">
+        <div class="card-id">${card.id}</div>
+        <div class="card-name">${card.name}</div>
+        <div class="card-meta-row">
+          <span class="card-subtype">${getSubtypeDisplay(card)}</span>
+          ${renderRarityDots(card.rarityDots)}
+        </div>
+        ${stats.length ? `<div class="card-stats-mini">
+          ${stats.map(s => `<span class="stat-chip ${s.cls||''}">${s.label}</span>`).join('')}
+        </div>` : ''}
       </div>
     </div>
+  `;
+}
 
-    <!-- FOOTER -->
-    <footer class="border-t border-purple-950 bg-black/60 px-6 py-4 text-center text-xs text-slate-500 flex flex-wrap justify-between items-center gap-4">
-      <p>© 2026 NightCafe: The Card Game. Created for beta testing. Built on Supabase integration framework.</p>
-      <div class="flex space-x-4">
-        <button @click="openFeedbackModal('general')" class="hover:text-purple-400 transition">Feedback Form</button>
-        <span class="text-slate-700">|</span>
-        <button @click="currentScreen = 'info'" class="hover:text-purple-400 transition">View Rulebook</button>
+function renderCardsGrid(cards) {
+  const grid = document.getElementById('cards-grid');
+  if (!cards.length) {
+    grid.innerHTML = '<p style="padding:2rem;color:var(--text-muted)">No cards match your filter.</p>';
+    return;
+  }
+  grid.innerHTML = cards.map(renderMiniCard).join('');
+  // Attach 3D tilt to all mini cards
+  grid.querySelectorAll('.mini-card').forEach(card => attach3DTilt(card));
+}
+
+function attach3DTilt(el) {
+  el.addEventListener('mousemove', e => {
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width  - 0.5;
+    const y = (e.clientY - r.top)  / r.height - 0.5;
+    el.style.transform = `perspective(600px) rotateY(${x*20}deg) rotateX(${-y*20}deg) scale(1.06)`;
+    const shine = el.querySelector('.card-shine');
+    if (shine) shine.style.background = `radial-gradient(circle at ${(x+0.5)*100}% ${(y+0.5)*100}%, rgba(255,255,255,0.28) 0%, transparent 65%)`;
+  });
+  el.addEventListener('mouseleave', () => {
+    el.style.transform = 'perspective(600px) rotateY(0) rotateX(0) scale(1)';
+    const shine = el.querySelector('.card-shine');
+    if (shine) shine.style.background = 'none';
+  });
+}
+
+function filterCards(type, btn) {
+  activeFilter = type;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  applyFilters();
+}
+
+function searchCards(q) {
+  searchQuery = q.toLowerCase();
+  applyFilters();
+}
+
+function applyFilters() {
+  let cards = allCards;
+  if (activeFilter !== 'all') {
+    cards = cards.filter(c => c.type === activeFilter);
+  }
+  if (searchQuery) {
+    cards = cards.filter(c =>
+      c.name.toLowerCase().includes(searchQuery) ||
+      c.id.toLowerCase().includes(searchQuery) ||
+      (c.effect && c.effect.toLowerCase().includes(searchQuery)) ||
+      (c.keyword && c.keyword.toLowerCase().includes(searchQuery))
+    );
+  }
+  renderCardsGrid(cards);
+}
+
+function setCardsView(view) {
+  document.getElementById('btn-gallery-view').classList.toggle('active', view === 'gallery');
+  document.getElementById('btn-list-view').classList.toggle('active', view === 'list');
+  if (view === 'list') renderDeckView();
+  else renderCardsGrid(getFilteredCards());
+}
+
+function getFilteredCards() {
+  let cards = allCards;
+  if (activeFilter !== 'all') cards = cards.filter(c => c.type === activeFilter);
+  if (searchQuery) cards = cards.filter(c => c.name.toLowerCase().includes(searchQuery) || c.id.toLowerCase().includes(searchQuery));
+  return cards;
+}
+
+function renderDeckView() {
+  const grid = document.getElementById('cards-grid');
+  grid.style.display = 'block';
+  let html = '';
+  for (const deck of allDecks.prebuilt || []) {
+    const deckCards = allCards.filter(c => (c.inDecks[deck.id] || 0) > 0);
+    html += `
+      <div style="margin-bottom:2rem">
+        <h3 style="font-family:var(--font-display);font-size:1.2rem;font-weight:300;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)">
+          ${deck.name}
+        </h3>
+        <div class="cards-grid">
+          ${deckCards.map(renderMiniCard).join('')}
+        </div>
       </div>
-    </footer>
+    `;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('.mini-card').forEach(c => attach3DTilt(c));
+}
 
-  </div>
+// ============================================================
+// CARD MODAL
+// ============================================================
+function openCardModal(cardId) {
+  const card = allCards.find(c => c.id === cardId);
+  if (!card) return;
 
-  <script>
-    // =========================================================================
-    //                        NC CONFIGURATION ZONE
-    // =========================================================================
-    // Copy/Paste your actual Supabase parameters here!
-    const SUPABASE_URL = "https://owfdyaarhkqmrvckvmgp.supabase.co"; 
-    const SUPABASE_ANON_KEY = "sb_publishable_M8FDLK2p-IzbgVXpPy_Wig_60ji5uo8"; 
+  const modal = document.getElementById('modal-card-inner');
+  modal.innerHTML = renderCardModal(card);
 
-    // Google Form URLs. (If Supabase keys are active, feedback logs will save directly 
-    // to your SQL database instead. Otherwise, they fall back to these forms.)
-    const GOOGLE_FORM_FEEDBACK_URL = "https://docs.google.com/forms/d/e/1FAIpQLSd7gqV3895e6_R9aB8N_testKeyPlaceholder/formResponse";
-    const GOOGLE_FORM_DECK_URL     = "https://docs.google.com/forms/d/e/1FAIpQLSd7gqV3895e6_R9aB8N_testKeyPlaceholder/formResponse";
-    const GOOGLE_FORM_VOTE_URL     = "https://docs.google.com/forms/d/e/1FAIpQLSd7gqV3895e6_R9aB8N_testKeyPlaceholder/formResponse";
-    const GOOGLE_FORM_MATCH_URL    = "https://docs.google.com/forms/d/e/1FAIpQLSd7gqV3895e6_R9aB8N_testKeyPlaceholder/formResponse";
-    // =========================================================================
+  document.getElementById('card-modal-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
 
-    // Create the DB Client dynamically based on keys configuration
-    const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY) ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+function closeCardModal(e) {
+  if (e && e.target !== document.getElementById('card-modal-backdrop')) return;
+  document.getElementById('card-modal-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('card-modal-backdrop')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('card-modal-backdrop')) closeCardModal(e);
+});
 
-    const { createApp, ref, onMounted, computed } = Vue;
 
-    createApp({
-      setup() {
-        // App Core state
-        const currentScreen = ref('welcome');
-        const authenticatedUser = ref(null);
-        const supabaseConnected = ref(!!supabase); 
-        const indexSubTab = ref('gallery');
-        const cardFilter = ref('ALL');
-        const feedbackFormOpen = ref(false);
 
-        // Access Whitelist Login credentials
-        const loginForm = ref({ username: '', password: '' });
+function formatAbilityCost(cost) {
+  const parts = [];
+  if (cost.loyalty)    parts.push(`<span class="cost-loyalty">${cost.loyalty} Loyalty</span>`);
+  if (cost.reputation) parts.push(`<span class="cost-rep">${cost.reputation} Rep</span>`);
+  if (cost.credits)    parts.push(`${cost.credits} CR`);
+  return parts.join(' · ');
+}
 
-        // Database variables
-        const customDecks = ref([]);
-        const activeDocId = ref('rulebook');
-        const cardFilterType = ref('ALL');
-        const spotlightCard = ref(null);
-        const activeRegionGlow = ref(null);
-        const tiltCard = ref(null);
+function linkTermsInText(text) {
+  let result = text;
+  for (const [term, def] of Object.entries(GLOSSARY)) {
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    result = result.replace(
+      new RegExp(`(?<![<\\w-])(${escaped}s?)(?![\\w-])`, 'g'),
+      `<span class="term-link" style="font-size:inherit">$1<span class="term-tooltip">${def}</span></span>`
+    );
+  }
+  return result;
+}
 
-        // Community surveys/feedbacks state parameters
-        const feedbackData = ref({ category: 'General', description: '' });
+function renderCardModal(card) {
+  const typeColor = getTypeColor(card.type);
+  const moodClass = `mood-${card.illustrationMood || 'neutral'}`;
 
-        // Static documentation dictionary
-        const documents = ref([
-          { id: 'rulebook', title: 'Quick Duel Rulebook', content: `# DOCUMENT 2: QUICK DUEL RULEBOOK\n\n## INTRODUCTION\nThis rulebook covers everything you need to play a complete Quick Duel game using the First Render starter decks. Quick Duel is a two-player format. Each player fields one Creator card and a 40-card deck.\n\n## THE GOLDEN RULE\nIf a card's text contradicts these rules, the card text takes priority. Cards are exceptions to rules, not errors.` },
-          { id: 'faq', title: 'FAQ & Edge Cases', content: `# DOCUMENT 3: FAQ\n\n### A. CREDITS AND ECONOMY\n**Q: Do I have to pay Credits to play cards from my hand?**\nYes. Every card has a printed Credit cost. Pay it when you play the card.\n\n### B. ALGORITHM SWAP\n**Q: Does ALGORITHM SWAP change the actual Style tag?**\nFor existing Creations, they are treated as having the swapped tag while active, then revert.` },
-          { id: 'quickreference', title: 'Quick Reference Sheet', content: `# DOCUMENT 5: QUICK REFERENCE SHEET\n\n## TURN ORDER\n1. REFRESH: Gain Credits, Reduce Runtimes, Gain Visibility, Collect Reputation.\n2. MAIN: Play Models, Activate, Play Modifiers/Artifacts/Events, Creator abilities, Remix.\n3. END: Carryover, Creator Stress, Draw.` },
-          { id: 'tutorial1a', title: 'Tutorial: Horde Deck', content: `# DOCUMENT 1A: TUTORIAL — HORDE STARTER DECK\nThis tutorial teaches you everything you need to play with the Anonymous User - Horde deck from scratch.` },
-          { id: 'tutorial1b', title: 'Tutorial: CLIP Deck', content: `# DOCUMENT 1B: TUTORIAL — CLIP STARTER DECK\nAdvanced Tutorial focusing on what makes the Aia - CLIP Starter Deck different. Aia starts with 11 Loyalty.` },
-          { id: 'deckbuilder', title: "Deck Builder's Guide", content: `# DOCUMENT 6: DECK BUILDER'S GUIDE\n\n## DECK BUILDING RULES (QUICK DUEL)\n- 40 cards total per deck (including Creator and 2 guaranteed models).\n- Shuffled deck: exactly 37 cards.\n- Maximum 3 copies of any single non-Creator card.` },
-          { id: 'feedback_message', title: 'Beta Tester Message', content: `# DOCUMENT 8: BETA TESTER MESSAGE\n\nHello and thank you! You are holding one of the first copies of NightCafe: The Card Game. Your feedback on Reputation economy, SD1.5 self-destruction, and CLIP-LOCK application is vital.` }
-        ]);
+  // Build stats bar
+  let statsHtml = '';
+  if (card.type === 'Creator') {
+    statsHtml = `
+      <div class="modal-stat"><span class="modal-stat-label">Loyalty</span><span class="modal-stat-value">${card.loyalty}</span></div>
+      <div class="modal-stat"><span class="modal-stat-label">Bonus</span><span class="modal-stat-value" style="font-size:0.75rem">${card.startingBonus.display}</span></div>
+    `;
+  } else if (card.type === 'Model') {
+    statsHtml = `
+      <div class="modal-stat"><span class="modal-stat-label">Play</span><span class="modal-stat-value">${card.playCost}</span></div>
+      <div class="modal-stat"><span class="modal-stat-label">Activate</span><span class="modal-stat-value">${card.activateCost}</span></div>
+      <div class="modal-stat"><span class="modal-stat-label">Quality</span><span class="modal-stat-value">${card.quality}</span></div>
+      <div class="modal-stat"><span class="modal-stat-label">Runtime</span><span class="modal-stat-value">${card.runtime}</span></div>
+    `;
+  } else if (card.cost !== undefined) {
+    const costLabel = card.costType === 'reputation' ? `${card.cost} Rep` : `${card.cost} CR`;
+    statsHtml = `<div class="modal-stat"><span class="modal-stat-label">Cost</span><span class="modal-stat-value">${costLabel}</span></div>`;
+    if (card.duration) statsHtml += `<div class="modal-stat"><span class="modal-stat-label">Duration</span><span class="modal-stat-value" style="font-size:0.7rem">${card.duration}</span></div>`;
+    if (card.timing)   statsHtml += `<div class="modal-stat"><span class="modal-stat-label">Timing</span><span class="modal-stat-value" style="font-size:0.75rem">${card.timing}</span></div>`;
+  }
 
-        // Cards data dictionary
-        const cards = ref([
-          { code: 'C-001', name: 'Aia', type: 'Creator', rarity: 'Rare', loyalty: 11, desc: 'CLIP Resistance Faction. Passive: once per turn apply CLIP-LOCK. Active 1: Overrender. Active 2: Positive Feedback.', text: 'Passive: CLIP-LOCK. Active 1: Overrender (3 Rep): target opponent Creation -1 Quality. Active 2: Positive Feedback (5 Rep).' },
-          { code: 'C-002', name: 'Anonymous User', type: 'Creator', rarity: 'Mythic', loyalty: 16, desc: 'Legends / Newbies Faction. Passive: Copycat. Active 1: First Post. Active 2: Flood the Feed.', text: 'Passive: Copycat style steal. Active 1: First Post (1 Rep): next Model activation costs 2 fewer Credits.' },
-          { code: 'M-001', name: 'Coherent (Low Settings)', type: 'Model', rarity: 'Rare', cost: 3, quality: 3, desc: 'Compatible: Fantasy, Landscape. Incompatible: Portrait.', text: 'Play 3. Activate 4. Quality 3. Runtime 2. Guaranteed in Aia Deck.' },
-          { code: 'M-002', name: 'Juggernaut v9', type: 'Model', rarity: 'Uncommon', cost: 2, quality: 2, desc: 'Compatible: Portrait, Abstract. Incompatible: Landscape.', text: 'Play 2. Activate 3. Quality 2. Runtime 2. Abstract Creations gain +1 Quality.' },
-          { code: 'M-003', name: 'SDXL', type: 'Model', rarity: 'Uncommon', cost: 1, quality: 2, desc: 'Compatible: Portrait, Landscape. Incompatible: Abstract.', text: 'Play 1. Activate 2. Quality 2. Runtime 1. Portrait Creations enter with +1 Visibility.' },
-          { code: 'M-004', name: 'Stable Diffusion 1.5', type: 'Model', rarity: 'Common', cost: 0, quality: 1, desc: 'Compatible: Fantasy, Landscape. Incompatible: Portrait.', text: 'Play 0. Activate 0. Quality 1. Runtime 1. Creations gain 1 extra Glitch. Destroyed immediately without Prompt.' },
-          { code: 'P-001', name: 'Good Old Greg', type: 'Prompt', rarity: 'Common', cost: 1, desc: 'Assigns Fantasy tag. If already Fantasy, +1 Quality.' },
-          { code: 'P-002', name: 'Men...', type: 'Prompt', rarity: 'Common', cost: 1, desc: 'Assigns Portrait tag. +1 Visibility on entry.' },
-          { code: 'P-003', name: 'Copycat...', type: 'Prompt', rarity: 'Uncommon', cost: 3, desc: 'Cannot be affected by opponent modifiers/abilities for 3 turns.' },
-          { code: 'P-006', name: 'Are You Crazy?!', type: 'Prompt', rarity: 'Uncommon', cost: 3, desc: '+3 Quality, +1 Runtime.' },
-          { code: 'MO-001', name: 'The Astronaut', type: 'Modifier', rarity: 'Mythic', cost: 3, desc: 'Universal Creator. +3 Loyalty on attach. +2 Visibility.' },
-          { code: 'MO-007', name: 'PRO Subscription', type: 'Modifier', rarity: 'Uncommon', cost: 3, desc: 'Once per turn, activate Model at half cost.' },
-          { code: 'A-001', name: 'Centaur Problem', type: 'Artifact', rarity: 'Uncommon', cost: 2, desc: 'Fantasy Creations enter with 1 Glitch.' },
-          { code: 'E-001', name: 'Mass Report', type: 'Event', rarity: 'Uncommon', cost: 7, desc: 'Cancel played modifier. Costs 7 Reputation.' }
-        ]);
+  // Compatibility (models)
+  let compatHtml = '';
+  if (card.type === 'Model' && (card.compatible || card.incompatible)) {
+    compatHtml = `
+      <div class="modal-section-title">Style Compatibility</div>
+      <div class="compat-row">
+        ${(card.compatible||[]).map(s => `<span class="compat-tag compatible">✔ ${s}</span>`).join('')}
+        ${(card.incompatible||[]).map(s => `<span class="compat-tag incompatible">✘ ${s}</span>`).join('')}
+      </div>
+    `;
+  }
+  if (card.compatibleModels) {
+    compatHtml += `
+      <div class="modal-section-title" style="margin-top:1.25rem">Compatible Models</div>
+      <p style="font-family:var(--font-body);font-size:0.85rem;color:var(--text-mid)">${card.compatibleModels}</p>
+    `;
+  }
 
-        // Prebuilt Decks configuration structures
-        const prebuilts = ref([
-          {
-            id: 'prebuilt_aia',
-            name: 'Aia — CLIP Resistance Deck',
-            isPrebuilt: true,
-            creatorCode: 'C-001',
-            guaranteedModels: ['M-001', 'M-002'],
-            shuffledCards: { 'P-003': 3, 'P-006': 3, 'MO-001': 1, 'MO-007': 1, 'A-001': 2 }
-          },
-          {
-            id: 'prebuilt_anon',
-            name: 'Anonymous User — Horde Deck',
-            isPrebuilt: true,
-            creatorCode: 'C-002',
-            guaranteedModels: ['M-003', 'M-004'],
-            shuffledCards: { 'P-001': 3, 'P-002': 3, 'MO-001': 1, 'E-001': 1 }
-          }
-        ]);
+  // Abilities (creators)
+  let abilitiesHtml = '';
+  if (card.passive || card.abilities) {
+    abilitiesHtml += `<div class="modal-section-title">Abilities</div>`;
+    if (card.passive) {
+      abilitiesHtml += `
+        <div class="ability-block">
+          <div class="ability-header">
+            <span class="ability-num">◈</span>
+            <span class="ability-name">${card.passive.name}</span>
+            <span class="ability-cost">Passive</span>
+          </div>
+          <p class="ability-text">${linkTermsInText(card.passive.text)}</p>
+        </div>
+      `;
+    }
+    if (card.influence) {
+      abilitiesHtml += `
+        <div class="ability-block">
+          <div class="ability-header">
+            <span class="ability-num">◈</span>
+            <span class="ability-name">${card.influence.name}</span>
+            <span class="ability-cost">Influence</span>
+          </div>
+          <p class="ability-text">${linkTermsInText(card.influence.text)}</p>
+        </div>
+      `;
+    }
+    if (card.abilities) {
+      card.abilities.forEach(ab => {
+        const isSignature = ab.num === 'signature';
+        const numDisplay = isSignature ? '⚡' : `${ab.num}`;
+        abilitiesHtml += `
+          <div class="ability-block ${isSignature ? 'signature' : ''}">
+            <div class="ability-header">
+              <span class="ability-num">${numDisplay}</span>
+              <span class="ability-name">${ab.name}</span>
+              <span class="ability-cost">${formatAbilityCost(ab.cost)}</span>
+            </div>
+            <p class="ability-text">${linkTermsInText(ab.text)}</p>
+          </div>
+        `;
+      });
+    }
+  }
 
-        const selectedDeckId = ref('prebuilt_aia');
+  // Favourite prompt
+  let fpHtml = '';
+  if (card.favouritePrompt) {
+    fpHtml = `
+      <div class="modal-section-title">Favourite Prompt</div>
+      <div class="ability-block">
+        <div class="ability-header">
+          <span class="ability-num">✦</span>
+          <span class="ability-name">${card.favouritePrompt.text}</span>
+          <span class="ability-cost">${card.favouritePrompt.subtype} · Free</span>
+        </div>
+        <p class="ability-text">${linkTermsInText(card.favouritePrompt.effect)}</p>
+      </div>
+    `;
+  }
 
-        // Play engine state tracking variables
-        const gameState = ref({
-          round: 1,
-          turnPlayer: 1, // 1 or 2
-          p1: { loyalty: 11, credits: 5, reputation: 0, field: [{ id: 1, card: null, visibility: 0, clipLocked: false }, { id: 2, card: null, visibility: 0, clipLocked: false }, { id: 3, card: null, visibility: 0, clipLocked: false }] },
-          p2: { loyalty: 16, credits: 4, reputation: 0, field: [{ id: 1, card: null, visibility: 0, clipLocked: false }, { id: 2, card: null, visibility: 0, clipLocked: false }, { id: 3, card: null, visibility: 0, clipLocked: false }] }
-        });
+  // Main effect (non-creator cards)
+  let effectHtml = '';
+  if (card.effect) {
+    effectHtml = `
+      <div class="modal-section-title">Effect</div>
+      <p style="font-family:var(--font-body);font-size:0.88rem;line-height:1.75;color:var(--text-mid)">
+        ${linkTermsInText(card.effect.replace(/\n/g, '</p><p style="font-family:var(--font-body);font-size:0.88rem;line-height:1.75;color:var(--text-mid);margin-top:0.75rem">'))}</p>
+    `;
+  }
 
-        const gameLogs = ref([
-          { time: '14:30', msg: 'Match Sandbox Session started. Setup active components.' }
-        ]);
+  // Attach-to info (modifiers)
+  let attachHtml = '';
+  if (card.attachesTo) {
+    attachHtml = `
+      <div class="modal-section-title">Attaches To</div>
+      <p style="font-family:var(--font-body);font-size:0.85rem;color:var(--text-mid)">${card.attachesTo}</p>
+    `;
+  }
 
-        onMounted(() => {
-          // Check session persistence
-          const user = sessionStorage.getItem('authenticatedUser');
-          if (user) {
-            authenticatedUser.value = user;
-          }
-          // Fetch custom decks from localStorage
-          const cached = localStorage.getItem('nc_custom_decks');
-          if (cached) {
-            customDecks.value = JSON.parse(cached);
-          }
-          spotlightCard.value = cards.value[0];
-        });
+  // Deck appearances
+  const deckBadges = allDecks.prebuilt?.map(d => {
+    const count = card.inDecks?.[d.id] || 0;
+    return count > 0
+      ? `<span class="deck-badge in-deck">× ${count} in ${d.name.split('—')[0].trim()}</span>`
+      : `<span class="deck-badge">Not in ${d.name.split('—')[0].trim()}</span>`;
+  }).join('') || '';
 
-        // ---------------- AUTHENTICATION & SECURITY ----------------
-        // SHA-256 Hashing Implementation for Secure Zero-Cost Passwords
-        async function sha256(string) {
-          const utf8 = new TextEncoder().encode(string);
-          const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
-          const hashArray = Array.from(new Uint8Array(hashBuffer));
-          return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
+  const creatorNotes = card.creatorNotes
+    ? `<p style="font-family:var(--font-body);font-size:0.82rem;font-style:italic;color:var(--text-muted);margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border-light)">"${card.creatorNotes}"</p>`
+    : '';
 
-        const handleLogin = async () => {
-          const passHash = await sha256(loginForm.value.password);
-          
-          if (supabase) {
-            // Live Database Query Mode
-            const { data, error } = await supabase
-              .from('beta_users')
-              .select('*')
-              .eq('username', loginForm.value.username)
-              .eq('password_hash', passHash)
-              .single();
+  const designNote = card.designNote
+    ? `<p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-top:0.75rem;background:var(--bg);padding:0.6rem 0.8rem;border-radius:var(--radius);border-left:2px solid var(--accent)">⚑ ${card.designNote}</p>`
+    : '';
 
-            if (data) {
-              authenticatedUser.value = data.username;
-              sessionStorage.setItem('authenticatedUser', data.username);
-              currentScreen.value = 'welcome';
-            } else {
-              alert("Incorrect whitelist credentials. Please try again!");
-            }
-          } else {
-            // Local fallback sandbox mode
-            if (loginForm.value.username && loginForm.value.password) {
-              authenticatedUser.value = loginForm.value.username;
-              sessionStorage.setItem('authenticatedUser', loginForm.value.username);
-              currentScreen.value = 'welcome';
-            }
-          }
-        };
+  return `
+    <div class="modal-card-visual">
+      <div class="modal-card-art ${moodClass}">
+        <em>${card.illustration}</em>
+      </div>
+      <div class="modal-card-footer-strip">
+        <span class="modal-card-setinfo">SET 001 · First Render · @aia</span>
+        ${renderRarityDots(card.rarityDots)}
+      </div>
+    </div>
+    <div class="modal-card-info">
+      <div class="modal-type-label" style="color:${typeColor}">${card.type.toUpperCase()}${card.subtype ? ` · ${card.subtype.toUpperCase()}` : ''}</div>
+      <h2 class="modal-card-name">${card.name}</h2>
+      ${card.id ? `<p class="modal-card-subtype">${card.id}</p>` : ''}
+      <div class="modal-stats-bar">${statsHtml}</div>
+      <div>${deckBadges}</div>
 
-        const logout = () => {
-          authenticatedUser.value = null;
-          sessionStorage.removeItem('authenticatedUser');
-          currentScreen.value = 'login';
-        };
+      ${abilitiesHtml}
+      ${fpHtml}
+      ${effectHtml}
+      ${attachHtml}
+      ${compatHtml}
 
-        // ---------------- DOCUMENTATION RENDERING ----------------
-        const renderMarkdown = (text) => {
-          // Basic parser
-          return text
-            .replace(/\n\n/g, '<br><br>')
-            .replace(/##\s+(.*)/g, '<h3 class="text-lg font-bold text-amber-300 mt-4 mb-2">$1</h3>')
-            .replace(/#\s+(.*)/g, '<h2 class="text-xl font-extrabold text-white mb-3">$1</h2>')
-            .replace(/\*\*([^*]+)\*\*/g, '<strong class="text-white">$1</strong>');
-        };
+      ${card.deckLimit ? `<p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-top:0.75rem">⚑ Deck limit: ${card.deckLimit}</p>` : ''}
+      ${card.flavourText ? `<p style="font-family:var(--font-body);font-size:0.82rem;font-style:italic;color:var(--text-muted);margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border-light)">"${card.flavourText}"</p>` : ''}
+      ${creatorNotes}
+      ${designNote}
+    </div>
+  `;
+}
 
-        const highlightGlossaryTerms = (text) => {
-          if (!text) return '';
-          const terms = ['CLIP-LOCK', 'Glitch token', 'Remix Queue', 'Creator Stress', 'Reputation', 'Loyalty'];
-          let parsed = text;
-          terms.forEach(term => {
-            const regex = new RegExp(`\\b${term}\\b`, 'gi');
-            parsed = parsed.replace(regex, `<span class="text-amber-300 font-bold underline cursor-pointer" onclick="alert('Glossary Concept: ${term}')">${term}</span>`);
-          });
-          return parsed;
-        };
+// ============================================================
+// DECKS
+// ============================================================
+function loadUserDecks() {
+  try {
+    const raw = localStorage.getItem('nc_decks');
+    return raw ? JSON.parse(raw) : { version: 1, decks: [] };
+  } catch { return { version: 1, decks: [] }; }
+}
 
-        // ---------------- CARD UTILITIES & 3D GALLERY ----------------
-        const getActiveDoc = computed(() => {
-          return documents.value.find(d => d.id === activeDocId.value) || documents.value[0];
-        });
+function saveUserDecks(data) {
+  localStorage.setItem('nc_decks', JSON.stringify(data));
+}
 
-        const filteredCards = computed(() => {
-          if (cardFilter.value === 'ALL') return cards.value;
-          return cards.value.filter(c => c.type.toUpperCase() === cardFilter.value);
-        });
+function renderDecksGrid() {
+  const grid = document.getElementById('decks-grid');
+  const userData = loadUserDecks();
 
-        const viewCardDetails = (card) => {
-          spotlightCard.value = card;
-        };
+  let html = '';
 
-        const handleCardTilt = (e) => {
-          if (!tiltCard.value) return;
-          const card = tiltCard.value;
-          const rect = card.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          const rX = ((y / rect.height) - 0.5) * -25;
-          const rY = ((x / rect.width) - 0.5) * 25;
-          card.style.transform = `rotateX(${rX}deg) rotateY(${rY}deg) scale(1.03)`;
-        };
+  // Prebuilt decks
+  for (const deck of allDecks.prebuilt || []) {
+    const cardCount = Object.values(deck.cards).reduce((a,b) => a+b, 0) + 3; // +1 creator, +2 models
+    html += `
+      <div class="deck-card" onclick="showDeckDetail('${deck.id}', 'prebuilt')">
+        <div class="deck-card-header">
+          <div class="deck-card-icon">📦</div>
+          <div>
+            <div class="deck-card-title">${deck.name}</div>
+            <div class="deck-card-subtitle">${deck.subtitle}</div>
+          </div>
+        </div>
+        <p class="deck-card-desc">${deck.description}</p>
+        <div class="deck-card-tags">
+          ${deck.archetypes.map(a => `<span class="deck-tag">${a}</span>`).join('')}
+          <span class="deck-tag" style="color:${deck.difficulty==='Beginner'?'var(--c-prompt)':'var(--accent)'};">${deck.difficulty}</span>
+        </div>
+        <div class="deck-card-footer">
+          <span class="deck-card-count">${cardCount} cards · Official</span>
+          <div class="deck-actions" onclick="event.stopPropagation()">
+            <button class="deck-action-btn" onclick="duplicateDeck('${deck.id}')">Duplicate</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
-        const resetCardTilt = () => {
-          if (!tiltCard.value) return;
-          tiltCard.value.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
-        };
+  // Custom decks
+  for (const deck of userData.decks) {
+    const cardCount = Object.values(deck.cards || {}).reduce((a,b) => a+b, 0) + 3;
+    html += `
+      <div class="deck-card" onclick="showDeckDetail('${deck.id}', 'custom')">
+        <div class="deck-card-header">
+          <div class="deck-card-icon">✏️</div>
+          <div>
+            <div class="deck-card-title">${deck.name}</div>
+            <div class="deck-card-subtitle">Custom Deck</div>
+          </div>
+        </div>
+        <div class="deck-card-tags">
+          ${deck.creator ? `<span class="deck-tag">Creator: ${deck.creator}</span>` : ''}
+          <span class="deck-tag">${cardCount}/40 cards</span>
+        </div>
+        <div class="deck-card-footer">
+          <span class="deck-card-count">Custom · ${new Date(deck.createdAt).toLocaleDateString()}</span>
+          <div class="deck-actions" onclick="event.stopPropagation()">
+            <button class="deck-action-btn" onclick="editDeck('${deck.id}')">Edit</button>
+            <button class="deck-action-btn danger" onclick="deleteDeck('${deck.id}')">Delete</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
-        const rarityColor = (rarity) => {
-          switch(rarity) {
-            case 'Mythic': return 'text-purple-400';
-            case 'Rare': return 'text-amber-400';
-            case 'Uncommon': return 'text-sky-400';
-            default: return 'text-slate-400';
-          }
-        };
+  // New deck button
+  html += `
+    <div class="deck-card" onclick="createNewDeck()" style="border-style:dashed;align-items:center;justify-content:center;min-height:180px">
+      <span style="font-size:2rem">＋</span>
+      <span style="font-family:var(--font-display);color:var(--text-muted)">Build New Deck</span>
+    </div>
+  `;
 
-        // ---------------- DECK BUILDER LOGIC ----------------
-        const decks = computed(() => {
-          return [...prebuilts.value, ...customDecks.value];
-        });
+  grid.innerHTML = html;
+}
 
-        const activeDeck = computed(() => {
-          return decks.value.find(d => d.id === selectedDeckId.value);
-        });
+function showDeckDetail(deckId, source) {
+  document.getElementById('decks-list-view').style.display = 'none';
+  const detailEl = document.getElementById('deck-detail-view');
+  detailEl.classList.add('active');
 
-        const selectDeck = (deck) => {
-          selectedDeckId.value = deck.id;
-        };
+  let deck;
+  if (source === 'prebuilt') {
+    deck = allDecks.prebuilt.find(d => d.id === deckId);
+  } else {
+    deck = loadUserDecks().decks.find(d => d.id === deckId);
+  }
+  if (!deck) return;
 
-        const createNewCustomDeck = () => {
-          const newDeck = {
-            id: 'custom_' + Date.now(),
-            name: 'New Custom Deck ' + (customDecks.value.length + 1),
-            isPrebuilt: false,
-            creatorCode: 'C-001',
-            guaranteedModels: ['M-001', 'M-002'],
-            shuffledCards: {}
-          };
-          customDecks.value.push(newDeck);
-          selectedDeckId.value = newDeck.id;
-          saveCustomDecks();
-        };
+  const isPrebuilt = source === 'prebuilt';
+  const cardEntries = Object.entries(deck.cards || {}).sort(([a],[b]) => {
+    const ca = allCards.find(c => c.id === a);
+    const cb = allCards.find(c => c.id === b);
+    const typeOrder = ['Model','Creator','Prompt','Modifier','Artifact','Event'];
+    return typeOrder.indexOf(ca?.type) - typeOrder.indexOf(cb?.type);
+  });
 
-        const deleteDeck = (deck) => {
-          customDecks.value = customDecks.value.filter(d => d.id !== deck.id);
-          selectedDeckId.value = 'prebuilt_aia';
-          saveCustomDecks();
-        };
+  detailEl.innerHTML = `
+    <div class="deck-detail-header">
+      <button class="btn-back" onclick="hideDeckDetail()">← Back to Decks</button>
+      <h2 style="font-family:var(--font-display);font-size:1.4rem;font-weight:300;flex:1">${deck.name}</h2>
+      ${!isPrebuilt ? `<button class="deck-action-btn" onclick="shareDeck('${deck.id}')">Share with @aia</button>` : ''}
+    </div>
+    <p style="font-family:var(--font-body);font-size:0.9rem;color:var(--text-muted);font-style:italic">${deck.subtitle || deck.description || ''}</p>
 
-        const saveCustomDecks = () => {
-          localStorage.setItem('nc_custom_decks', JSON.stringify(customDecks.value));
-        };
+    <div class="deck-composer">
+      <div class="deck-composer-cards">
+        <div class="cards-grid" id="deck-detail-grid">
+          ${[
+            ...(deck.guaranteedModels || []).map(id => {
+              const c = allCards.find(x => x.id === id);
+              return c ? `<div class="mini-card-wrapper" style="position:relative">${renderMiniCard(c)}<span style="position:absolute;top:4px;left:4px;background:var(--accent);color:white;font-size:0.6rem;padding:1px 5px;border-radius:3px;font-family:var(--font-mono)">GUARANTEED</span></div>` : '';
+            }),
+            ...cardEntries.map(([cardId, count]) => {
+              const c = allCards.find(x => x.id === cardId);
+              return c ? `<div style="position:relative">${renderMiniCard(c)}${count > 1 ? `<span style="position:absolute;top:4px;right:4px;background:var(--text);color:var(--bg);font-size:0.65rem;padding:1px 5px;border-radius:3px;font-family:var(--font-mono)">×${count}</span>` : ''}</div>` : '';
+            })
+          ].join('')}
+        </div>
+      </div>
+      <div class="deck-composer-sidebar">
+        <div class="composer-title">Deck List</div>
+        ${deck.creator ? `<div class="deck-slot-item" style="font-weight:600"><span class="slot-name">★ ${allCards.find(c=>c.id===deck.creator)?.name || deck.creator}</span></div>` : ''}
+        ${(deck.guaranteedModels||[]).map(id => {
+          const c = allCards.find(x=>x.id===id);
+          return `<div class="deck-slot-item"><span class="slot-count" style="color:var(--accent)">G</span><span class="slot-name">${c?.name || id}</span></div>`;
+        }).join('')}
+        <div style="border-top:1px solid var(--border-light);margin:0.5rem 0"></div>
+        ${cardEntries.map(([cardId, count]) => {
+          const c = allCards.find(x=>x.id===cardId);
+          return `<div class="deck-slot-item"><span class="slot-count">×${count}</span><span class="slot-name">${c?.name || cardId}</span></div>`;
+        }).join('')}
+        <div style="border-top:1px solid var(--border);margin:0.75rem 0;padding-top:0.5rem;font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted)">
+          Total: ${cardEntries.reduce((s,[,n])=>s+n,0)+3}/40
+        </div>
+        ${isPrebuilt ? `
+          <p style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted)">Official prebuilt deck — read-only. Duplicate to edit.</p>
+          <button class="btn-new-deck" style="margin-top:0.5rem;width:100%" onclick="duplicateDeck('${deck.id}')">Duplicate Deck</button>
+        ` : `
+          <button class="btn-new-deck" style="margin-top:0.5rem;width:100%" onclick="editDeck('${deck.id}')">Edit Deck</button>
+        `}
+      </div>
+    </div>
+  `;
 
-        const countCardsInDeck = (deck) => {
-          let count = 1 + deck.guaranteedModels.length; // Creator + Guaranteed models
-          Object.values(deck.shuffledCards).forEach(qty => count += qty);
-          return count;
-        };
+  detailEl.querySelector('#deck-detail-grid')?.querySelectorAll('.mini-card').forEach(c => attach3DTilt(c));
+}
 
-        const countShuffledDeck = (deck) => {
-          let count = 0;
-          Object.values(deck.shuffledCards).forEach(qty => count += qty);
-          return count;
-        };
+function hideDeckDetail() {
+  document.getElementById('deck-detail-view').classList.remove('active');
+  document.getElementById('deck-detail-view').innerHTML = '';
+  document.getElementById('decks-list-view').style.display = '';
+}
 
-        const isDeckValid = (deck) => {
-          return countCardsInDeck(deck) === 40 && countShuffledDeck(deck) === 37;
-        };
+function createNewDeck() {
+  const userData = loadUserDecks();
+  const newDeck = {
+    id: 'deck_' + Date.now(),
+    name: 'New Deck',
+    createdAt: new Date().toISOString(),
+    isCustom: true,
+    creator: null,
+    guaranteedModels: [],
+    cards: {},
+    notes: ''
+  };
+  userData.decks.push(newDeck);
+  saveUserDecks(userData);
+  renderDecksGrid();
+  // For now, just show the deck detail
+  showDeckDetail(newDeck.id, 'custom');
+}
 
-        const getCardByCode = (code) => {
-          return cards.value.find(c => c.code === code);
-        };
+function editDeck(deckId) {
+  // Navigate to cards section with deck-building mode
+  navigateTo('cards');
+  // In a full implementation, this would enter deck-building mode
+  alert('Deck editing: Navigate to the Cards tab and click cards to add them to your deck.\n\nFull deck builder UI coming soon!');
+}
 
-        const addCardToActiveDeck = (card) => {
-          if (!activeDeck.value || activeDeck.value.isPrebuilt) {
-            alert("Create or select an editable Custom Deck first!");
-            return;
-          }
-          if (card.type === 'Creator' || card.type === 'Model') {
-            alert("Creator and core guaranteed Models are assigned automatically.");
-            return;
-          }
-          const currentQty = activeDeck.value.shuffledCards[card.code] || 0;
-          if (currentQty >= 3) {
-            alert("Maximum 3 copies of any non-Creator card allowed!");
-            return;
-          }
-          activeDeck.value.shuffledCards[card.code] = currentQty + 1;
-          saveCustomDecks();
-        };
+function duplicateDeck(deckId) {
+  const src = allDecks.prebuilt.find(d=>d.id===deckId)
+           || loadUserDecks().decks.find(d=>d.id===deckId);
+  if (!src) return;
 
-        const increaseCardQty = (deck, code) => {
-          const qty = deck.shuffledCards[code] || 0;
-          if (qty < 3) {
-            deck.shuffledCards[code] = qty + 1;
-            saveCustomDecks();
-          }
-        };
+  const userData = loadUserDecks();
+  const copy = {
+    ...JSON.parse(JSON.stringify(src)),
+    id: 'deck_' + Date.now(),
+    name: src.name + ' (Copy)',
+    createdAt: new Date().toISOString(),
+    isCustom: true,
+  };
+  userData.decks.push(copy);
+  saveUserDecks(userData);
+  renderDecksGrid();
+  hideDeckDetail();
+  setTimeout(() => showDeckDetail(copy.id, 'custom'), 50);
+}
 
-        const decreaseCardQty = (deck, code) => {
-          const qty = deck.shuffledCards[code] || 0;
-          if (qty <= 1) {
-            delete deck.shuffledCards[code];
-          } else {
-            deck.shuffledCards[code] = qty - 1;
-          }
-          saveCustomDecks();
-        };
+function deleteDeck(deckId) {
+  if (!confirm('Delete this deck? This cannot be undone.')) return;
+  const userData = loadUserDecks();
+  userData.decks = userData.decks.filter(d => d.id !== deckId);
+  saveUserDecks(userData);
+  renderDecksGrid();
+}
 
-        const duplicateDeck = (deck) => {
-          const copy = {
-            id: 'custom_' + Date.now(),
-            name: deck.name + ' (Copy)',
-            isPrebuilt: false,
-            creatorCode: deck.creatorCode,
-            guaranteedModels: [...deck.guaranteedModels],
-            shuffledCards: { ...deck.shuffledCards }
-          };
-          customDecks.value.push(copy);
-          selectedDeckId.value = copy.id;
-          saveCustomDecks();
-        };
+function shareDeck(deckId) {
+  const deck = loadUserDecks().decks.find(d=>d.id===deckId);
+  if (!deck) return;
+  const params = new URLSearchParams({
+    'entry.DECK_NAME_FIELD': deck.name,
+    'entry.CREATOR_FIELD': deck.creator || 'Unknown',
+    'entry.CARDS_FIELD': JSON.stringify(deck.cards),
+  });
+  const url = `${CONFIG.FORMS.DECK_SHARE}?${params.toString()}`;
+  window.open(url, '_blank');
+}
 
-        // ---------------- FEEDBACK FORM SUBMISSION ----------------
-        const openFeedbackModal = (type) => {
-          feedbackData.value.category = type === 'general' ? 'General' : 'Bug';
-          feedbackFormOpen.value = true;
-        };
+// ============================================================
+// FEEDBACK
+// ============================================================
+function openFeedbackModal() {
+  document.getElementById('feedback-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeFeedbackModal(e) {
+  if (e && e.target !== document.getElementById('feedback-modal')) return;
+  document.getElementById('feedback-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
 
-        const submitIntegratedFeedback = async () => {
-          if (supabase) {
-            // Write directly to live Supabase DB
-            const { error } = await supabase
-              .from('feedback_logs')
-              .insert([{ 
-                username: authenticatedUser.value, 
-                category: feedbackData.value.category, 
-                description: feedbackData.value.description 
-              }]);
+document.getElementById('btn-open-feedback').addEventListener('click', openFeedbackModal);
+document.getElementById('btn-open-feedback-fab').addEventListener('click', openFeedbackModal);
 
-            if (!error) {
-              alert("Feedback logged to Supabase! Thank you.");
-              feedbackFormOpen.value = false;
-              feedbackData.value.description = '';
-              return;
-            }
-          }
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('card-modal-backdrop').classList.remove('open');
+    document.getElementById('feedback-modal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+});
 
-          // Fallback: Headless posting to Google Forms
-          const payload = new URLSearchParams();
-          payload.append('entry.123456789', authenticatedUser.value);
-          payload.append('entry.987654321', feedbackData.value.category);
-          payload.append('entry.555666777', feedbackData.value.description);
+function openFeedbackForm(type) {
+  closeFeedbackModal({ target: document.getElementById('feedback-modal') });
+  const urls = {
+    general: CONFIG.FORMS.GENERAL_FEEDBACK,
+    design:  CONFIG.FORMS.CARD_DESIGN_VOTE,
+    deck:    CONFIG.FORMS.DECK_SHARE,
+  };
+  if (urls[type]) window.open(urls[type], '_blank');
+  else alert('Form not yet configured. Check back soon!');
+}
 
-          fetch(GOOGLE_FORM_FEEDBACK_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: payload
-          }).then(() => {
-            alert("Your beta logs have been reported via Google Forms! Thank you.");
-            feedbackFormOpen.value = false;
-            feedbackData.value.description = '';
-          });
-        };
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+  initAuth();
 
-        const shareCustomDeck = async () => {
-          if (!activeDeck.value) return;
-          const jsonString = JSON.stringify(activeDeck.value);
-
-          if (supabase) {
-            const { error } = await supabase
-              .from('shared_decks')
-              .insert([{ 
-                username: authenticatedUser.value, 
-                deck_name: activeDeck.value.name, 
-                deck_data: activeDeck.value 
-              }]);
-
-            if (!error) {
-              alert("Deck configuration saved to Supabase successfully!");
-              return;
-            }
-          }
-
-          // Fallback: Headless posting to Google Forms
-          const payload = new URLSearchParams();
-          payload.append('entry.333444555', authenticatedUser.value);
-          payload.append('entry.444555666', jsonString);
-
-          fetch(GOOGLE_FORM_DECK_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: payload
-          }).then(() => {
-            alert("Your custom deck configuration has been shared with the developers!");
-          });
-        };
-
-        const voteForDesign = (layoutOption) => {
-          // Send Art layout metrics
-          const payload = new URLSearchParams();
-          payload.append('entry.888999000', authenticatedUser.value);
-          payload.append('entry.111222333', layoutOption);
-
-          fetch(GOOGLE_FORM_VOTE_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: payload
-          }).then(() => {
-            alert(`Vote cast successfully for Layout ${layoutOption}!`);
-          });
-        };
-
-        // ---------------- SANDBOX BATTLE ENGINE ----------------
-        const triggerSimulatedAction = (action) => {
-          const timeStr = new Date().toLocaleTimeString();
-          if (action === 'activateModel') {
-            gameState.value.p1.credits -= 3;
-            gameState.value.p1.field[0].card = cards.value[2]; // Summon Coherent
-            gameState.value.p1.field[0].visibility = 1;
-            gameLogs.value.unshift({ time: timeStr, msg: "Player 1 activated Coherent (Low Settings). Cost: 3 Credits." });
-          } else if (action === 'applyClipLock') {
-            gameState.value.p1.field[0].clipLocked = true;
-            gameLogs.value.unshift({ time: timeStr, msg: "Aia Passive triggered: CLIP-LOCK applied to Slot 1." });
-          } else if (action === 'remix') {
-            gameLogs.value.unshift({ time: timeStr, msg: "Creation in Slot 1 placed in Remix Queue." });
-          }
-        };
-
-        const passTurn = () => {
-          const timeStr = new Date().toLocaleTimeString();
-          gameState.value.turnPlayer = gameState.value.turnPlayer === 1 ? 2 : 1;
-          if (gameState.value.turnPlayer === 1) {
-            gameState.value.round += 1;
-          }
-          gameLogs.value.unshift({ time: timeStr, msg: `Turn passes. It is now Player ${gameState.value.turnPlayer}'s turn.` });
-        };
-
-        const resetLocalGame = () => {
-          gameState.value = {
-            round: 1,
-            turnPlayer: 1,
-            p1: { loyalty: 11, credits: 5, reputation: 0, field: [{ id: 1, card: null, visibility: 0, clipLocked: false }, { id: 2, card: null, visibility: 0, clipLocked: false }, { id: 3, card: null, visibility: 0, clipLocked: false }] },
-            p2: { loyalty: 16, credits: 4, reputation: 0, field: [{ id: 1, card: null, visibility: 0, clipLocked: false }, { id: 2, card: null, visibility: 0, clipLocked: false }, { id: 3, card: null, visibility: 0, clipLocked: false }] }
-          };
-          gameLogs.value = [{ time: new Date().toLocaleTimeString(), msg: "Duel board reset. Hotseat simulation primed." }];
-        };
-
-        const resolveMatchSimulated = (winnerNum) => {
-          const duration = gameState.value.round;
-          alert(`Simulated Victory recorded! Reporting match log.`);
-          
-          // Automated Game Data Logging to Google Forms
-          const payload = new URLSearchParams();
-          payload.append('entry.777888999', winnerNum === 1 ? 'Aia (P1)' : 'Anon (P2)');
-          payload.append('entry.222333444', duration);
-
-          fetch(GOOGLE_FORM_MATCH_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: payload
-          });
-        };
-
-        return {
-          currentScreen,
-          authenticatedUser,
-          supabaseConnected,
-          indexSubTab,
-          cardFilter,
-          feedbackFormOpen,
-          loginForm,
-          customDecks,
-          activeDocId,
-          cardFilterType,
-          spotlightCard,
-          activeRegionGlow,
-          tiltCard,
-          feedbackData,
-          documents,
-          cards,
-          prebuilts,
-          selectedDeckId,
-          gameState,
-          gameLogs,
-          handleLogin,
-          logout,
-          renderMarkdown,
-          highlightGlossaryTerms,
-          getActiveDoc,
-          filteredCards,
-          viewCardDetails,
-          handleCardTilt,
-          resetCardTilt,
-          rarityColor,
-          decks,
-          activeDeck,
-          selectDeck,
-          createNewCustomDeck,
-          deleteDeck,
-          countCardsInDeck,
-          countShuffledDeck,
-          isDeckValid,
-          getCardByCode,
-          addCardToActiveDeck,
-          increaseCardQty,
-          decreaseCardQty,
-          duplicateDeck,
-          openFeedbackModal,
-          submitIntegratedFeedback,
-          shareCustomDeck,
-          voteForDesign,
-          triggerSimulatedAction,
-          passTurn,
-          resetLocalGame,
-          resolveMatchSimulated
-        };
-      }
-    }).mount('#app');
-  </script>
+  // Handle hash routing on load
+  const hash = window.location.hash.replace('#', '');
+  if (hash && hash !== 'welcome') {
+    const [section, sub] = hash.split('/');
+    setTimeout(() => navigateTo(section, sub), 100);
+  }
+});
+</script>
 </body>
 </html>
